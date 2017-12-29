@@ -1,0 +1,12 @@
+name: sklearn2codedev
+dependencies:
+    - python=3.6.2
+    - nose
+    - numpy
+    - mako
+    - sympy
+    - scikit-learn
+    - six
+    - pip:
+        - toolz==0.8.2
+        - sklearn-contrib-py-earth

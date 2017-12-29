@@ -42,8 +42,8 @@ def get_config():
     cfg.VCS = "git"
     cfg.style = "pep440"
     cfg.tag_prefix = ""
-    cfg.parentdir_prefix = "cereal"
-    cfg.versionfile_source = "cereal/_version.py"
+    cfg.parentdir_prefix = "sklearn2code"
+    cfg.versionfile_source = "sklearn2code/_version.py"
     cfg.verbose = False
     return cfg
 
