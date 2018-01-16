@@ -7,7 +7,7 @@ from numpy.ma.testutils import assert_array_almost_equal
 from six import PY2, PY3
 from pandas import DataFrame
 
-def create_weird_regression_problem_1(m=10000, n=10):
+def create_weird_regression_problem_1(m=1000, n=10):
     X = DataFrame(np.random.normal(size=(m,n)), columns=['x%d' % i for i in range(n)])
     thresh = np.random.normal(size=n)
     X_transformed = X * (X > thresh)
@@ -35,7 +35,7 @@ def create_case(estimator, methods, predictor_data, response_data):
             module = exec_module('test_module', code)
             exported_pred = getattr(module, 'test_model')(**predictor_data['X'])
             assert_array_almost_equal(pred, exported_pred)
-#     test_case.__doc__ = 'Testing exportability of %s' % repr(estimator)
+    test_case.__doc__ = 'Testing exportability of %s' % repr(estimator)
     return test_case
 
 # All tests will be methods of this class

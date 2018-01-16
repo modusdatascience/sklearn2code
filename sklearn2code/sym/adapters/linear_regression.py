@@ -2,7 +2,7 @@ from sympy.core.numbers import RealNumber
 from ..syms import syms
 import numpy as np
 from sklearn.linear_model.base import LinearRegression
-from ..sym_predict import register_sym_predict
+from ..base import register_sym_predict
 
 @register_sym_predict(LinearRegression)
 def sym_predict_linear(estimator):

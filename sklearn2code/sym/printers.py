@@ -1,15 +1,12 @@
 from sympy.printing.jscode import JavascriptCodePrinter
 import os
-from .resourcepath import resources
+from sklearn2code.sym.resources import resources
 from mako.template import Template
 from sympy.printing.lambdarepr import NumPyPrinter
 from sympy.printing.python import PythonPrinter
 from _collections import defaultdict
 from operator import add
 from .parts import trim_parts, assert_parts_are_composable
-from .sym_predict_parts import sym_predict_parts
-from .sym_transform_parts import sym_transform_parts
-from .sym_predict_proba_parts import sym_predict_proba_parts
 import imp
 from six import exec_
 from toolz.functoolz import curry
@@ -170,23 +167,23 @@ language_assignment_statement_dispatcher['javascript'] = javascript_assigner
 language_assignment_statement_dispatcher['numpy'] = lambda symbols, function_name, input_symbols: ', '.join(symbols) + ' = %s(**kwargs)' % function_name
 language_return_statement_dispatcher = defaultdict(lambda: lambda expressions: 'return ' + ', '.join(expressions))
 language_return_statement_dispatcher['javascript'] = lambda expressions: 'return [' + ', '.join(expressions) + ']'
-
-def trim_code_precursors(assignments, outputs, inputs, all_variables):
-    reverse_new_assignments = []
-    new_inputs = []
-    used = set(reduce(add, map(lambda x: x.free_symbols, outputs)))
-    for variable, expr in reversed(assignments):
-        if variable in used:
-            used.update(expr.free_symbols)
-            reverse_new_assignments.append((variable, expr))
-    if not all_variables:
-        for variable in inputs:
-            if variable in used:
-                new_inputs.append(variable)
-    else:
-        new_inputs.extend(inputs)
-    return reversed(reverse_new_assignments), new_inputs
-            
+# 
+# def trim_code_precursors(assignments, outputs, inputs, all_variables):
+#     reverse_new_assignments = []
+#     new_inputs = []
+#     used = set(reduce(add, map(lambda x: x.free_symbols, outputs)))
+#     for variable, expr in reversed(assignments):
+#         if variable in used:
+#             used.update(expr.free_symbols)
+#             reverse_new_assignments.append((variable, expr))
+#     if not all_variables:
+#         for variable in inputs:
+#             if variable in used:
+#                 new_inputs.append(variable)
+#     else:
+#         new_inputs.extend(inputs)
+#     return reversed(reverse_new_assignments), new_inputs
+#             
             
 
 # def assignment_pairs_and_outputs_to_code(pairs_and_outputs, language, function_name, inputs, all_variables):

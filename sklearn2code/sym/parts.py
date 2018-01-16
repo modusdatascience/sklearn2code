@@ -1,13 +1,14 @@
 from operator import add, or_, __or__
 from itertools import compress, chain
 from six.moves import reduce
+from _operator import methodcaller
 
 def assert_parts_are_composable(parts):
     inputs, expressions, target = parts
     try:
         assert set(inputs) >= set(chain(*map(lambda x:x.free_symbols, expressions)))
     except:
-        assert set(inputs) >= set(chain(*map(lambda x:x.free_symbols, expressions)))
+        assert set(inputs) >= set(chain(*map(lambda x: set(map(methodcaller('free_symbols'), x)), expressions)))
     if target is not None:
         target_inputs, _, _ = target
         try:
