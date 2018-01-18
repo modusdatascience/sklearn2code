@@ -6,7 +6,6 @@ from sympy.printing.lambdarepr import NumPyPrinter
 from sympy.printing.python import PythonPrinter
 from _collections import defaultdict
 from operator import add
-from .parts import trim_parts, assert_parts_are_composable
 import imp
 from six import exec_
 from toolz.functoolz import curry

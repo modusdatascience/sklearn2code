@@ -1,7 +1,7 @@
 from toolz.functoolz import curry, flip as tzflip, identity, compose, complement
 from frozendict import frozendict
 from toolz.curried import valmap, itemmap
-from operator import methodcaller, __add__, __mul__, __sub__
+from operator import methodcaller, __add__, __mul__, __sub__, __or__
 from itertools import repeat, starmap
 from toolz.dicttoolz import merge_with
 from six import PY2, PY3, string_types
@@ -10,6 +10,7 @@ from sklearn2code.dispatching import fallback
 from sympy.core.symbol import Symbol
 from .base import safe_symbol
 from six.moves import reduce
+from sklearn2code.sym.base import VariableFactory
 
 @curry
 def tupsmap(n, fun, tups):
@@ -66,6 +67,44 @@ class Function(object):
         self._validate()
 #         self.sym = SymFunctionInterface(self)
     
+    def map_symbols(self, symbol_map):
+        symbol_map_ = itemmap(tupfun(safe_symbol, safe_symbol), symbol_map)
+        new_inputs = tuple(map(fallback(symbol_map_.__getitem__, identity, exception_type=KeyError), self.inputs))
+        new_calls = tupsmap(1, tupfun(identity, curry(map)(fallback(symbol_map_.__getitem__, identity, exception_type=KeyError))), self.calls)
+        new_outputs = tuple(map(methodcaller('subs', symbol_map_), self.outputs))
+        return Function(new_inputs, new_calls, new_outputs)
+    
+    def vars(self):
+        return frozenset(self.inputs) | frozenset(reduce(__or__, tupsmap(1, frozenset, self.calls)))
+    
+    def revar(self, existing):
+        Var = VariableFactory(existing=existing)
+        symbol_map = {var: Var() for var in self.vars()}
+        return self.map_symbols(symbol_map)
+    
+    def trim(self, used=None):
+        '''
+        Remove unused computation.
+        '''
+        if used is None:
+            used_ = frozenset(range(self.outputs))
+        elif isinstance(used, string_types):
+            used_ = frozenset((used,))
+        else:
+            used_ = frozenset(used)
+        trimmed_outputs = tuple(map(self.outputs.__getitem__, sorted(used)))
+        used_symbols = reduce(__or__, map(methodcaller('free_symbols'), (self.outputs[i] for i in used_)))
+        trimmed_calls = tuple()
+        for assigned, (fun, arguments) in reversed(self.calls):
+            argmap = dict(zip(fun.inputs, arguments))
+            trimmed_fun = fun.trim(used_symbols)
+            trimmed_arguments = tuple(map(argmap.__getitem__, trimmed_fun.inputs))
+            trimmed_assigned = filter(used_symbols.__contains__, assigned)
+            trimmed_calls = (trimmed_assigned, (trimmed_fun, trimmed_arguments)) + trimmed_calls
+            used_symbols = used_symbols | frozenset(trimmed_arguments)
+        trimmed_inputs = tuple(filter(used_symbols.__contains__, self.inputs))
+        return Function(trimmed_inputs, trimmed_calls, trimmed_outputs)
+    
     def __eq__(self, other):
         if not isinstance(other, Function):
             return NotImplemented
@@ -83,13 +122,6 @@ class Function(object):
         outputs = self.outputs
         return Function(inputs, calls, outputs)
     
-    def map_symbols(self, symbol_map):
-        symbol_map_ = itemmap(tupfun(safe_symbol, safe_symbol), symbol_map)
-        new_inputs = tuple(map(fallback(symbol_map_.__getitem__, identity, exception_type=KeyError), self.inputs))
-        new_calls = tupsmap(1, tupfun(identity, curry(map)(fallback(symbol_map_.__getitem__, identity, exception_type=KeyError))), self.calls)
-        new_outputs = tuple(map(methodcaller('subs', symbol_map_), self.outputs))
-        return Function(new_inputs, new_calls, new_outputs)
-        
     def concat_inputs(self, other):
         return Function(self.inputs + other.inputs, self.calls, self.outputs)
     
