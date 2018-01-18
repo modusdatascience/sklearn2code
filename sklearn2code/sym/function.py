@@ -4,15 +4,12 @@ from toolz.curried import valmap, itemmap
 from operator import methodcaller, __add__, __mul__, __sub__
 from itertools import repeat, starmap
 from toolz.dicttoolz import merge_with
-from six import PY2, PY3
+from six import PY2, PY3, string_types
 from types import MethodType
 from sklearn2code.dispatching import fallback
 from sympy.core.symbol import Symbol
-
-def safe_symbol(s):
-    if isinstance(s, Symbol):
-        return s
-    return Symbol(s)
+from .base import safe_symbol
+from six.moves import reduce
 
 @curry
 def tupsmap(n, fun, tups):
@@ -30,7 +27,16 @@ def tupfun(*funs):
 @curry
 def tupget(n, tup):
     return tup[n]
-    
+
+def isiterable(obj):
+    return hasattr(obj, '__iter__')
+
+def tupify(obj):
+    if isiterable(obj) and not isinstance(obj, string_types):
+        return tuple(obj)
+    else:
+        return (obj,)
+
 class Function(object):
     def __init__(self, inputs, calls, outputs, origin=None):
         '''
@@ -51,11 +57,11 @@ class Function(object):
             are the results of the computations expressed by the expressions.
         
         '''
-        self.inputs = tuple(map(safe_symbol, inputs))
+        self.inputs = tuple(map(safe_symbol, tupify(inputs)))
         self.calls = tupsmap(1, 
                              tupfun(identity, compose(tuple, curry(map)(safe_symbol))), 
                              tupsmap(0, compose(tuple, curry(map)(safe_symbol)), calls))
-        self.outputs = tuple(outputs)
+        self.outputs = tupify(outputs)
 #         self.origin = origin
         self._validate()
 #         self.sym = SymFunctionInterface(self)
@@ -70,7 +76,7 @@ class Function(object):
     
     def compose(self, right):
         '''
-        Compose.  Assume the outputs of right match, in order, the inputs of left.
+        Compose.  Assume the outputs of right match, in order, the inputs of self.
         '''
         inputs = right.inputs
         calls = ((self.inputs, (right, right.inputs)),) + self.calls
@@ -99,7 +105,7 @@ class Function(object):
     def ensure_same_inputs(self, other):
         if self.inputs != other.inputs:
                 raise ValueError('Inputs don\'t match: %s != %s' % 
-                                 (str(self.inputs, other.inputs)))
+                                 (str(self.inputs), str(other.inputs)))
     
     def ensure_same_output_length(self, other):
         if len(self.outputs) != len(other.outputs):
@@ -128,6 +134,16 @@ class Function(object):
     def apply(self, fun):
         return Function(self.inputs, self.calls, tuple(map(fun, self.outputs)))
     
+    def cartesian_product(self, other):
+        self.ensure_same_inputs(other)
+        inputs = self.inputs
+        calls = self.merge_calls(other)
+        outputs = self.outputs + other.outputs
+        return Function(inputs, calls, outputs)
+    
+def cart(*funs):
+    return reduce(lambda x,y: x.cartesian_product(y), funs)
+
 def funop(op, cls, name, flip=False):
     def __op__(self, other):
         if isinstance(other, Function):

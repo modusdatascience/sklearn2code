@@ -26,4 +26,4 @@ def import_submodules(package, recursive=True, ignore_import_errors=True):
             results.update(import_submodules(full_name))
     return results
 
-import_submodules(adapters)
+import_submodules(adapters, ignore_import_errors=False)

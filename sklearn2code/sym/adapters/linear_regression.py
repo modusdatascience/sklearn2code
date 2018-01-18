@@ -1,5 +1,5 @@
 from sympy.core.numbers import RealNumber
-from ..syms import syms
+from ..base import syms
 import numpy as np
 from sklearn.linear_model.base import LinearRegression
 from ..base import register_sym_predict

@@ -1,7 +1,7 @@
 from toolz.functoolz import curry
 
 
-def call_method_or_dispatch(method_name, dispatcher):
+def call_method_or_dispatch(method_name, dispatcher, docstring=None):
     def _call_method_or_dispatch(estimator, *args, **kwargs):
         try:
             return getattr(estimator, method_name)(*args, **kwargs)
@@ -9,10 +9,12 @@ def call_method_or_dispatch(method_name, dispatcher):
             for klass in type(estimator).mro():
                 if klass in dispatcher:
                     return dispatcher[klass](estimator, *args, **kwargs)
-            raise
+            raise NotImplementedError('Class %s does not have an implementation for %s.' % (type(estimator).__name__, method_name))
         except:
             raise
     _call_method_or_dispatch.__name__ = method_name
+    if docstring is not None:
+        _call_method_or_dispatch.__doc__ = docstring
     return _call_method_or_dispatch
 
 def fallback(*args, exception_type=AttributeError):

@@ -1,9 +1,9 @@
 from pyearth.earth import Earth
 from pyearth.export import export_sympy, export_sympy_term_expressions
-from ..syms import register_syms
 from sympy.core.symbol import Symbol
 from ..base import register_input_size, register_sym_predict,\
     register_sym_transform
+from ..base import register_syms
     
 @register_input_size(Earth)
 def input_size_earth(estimator):

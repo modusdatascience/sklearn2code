@@ -10,13 +10,15 @@ from sympy.logic.boolalg import true
 from distutils.version import LooseVersion
 import sklearn
 from six.moves import reduce
-from ..syms import syms, register_syms
 from ..sympy_special_values import Expit
 from ..base import register_sym_decision_function, sym_predict,\
     register_sym_predict_proba, sym_decision_function, sym_score_to_proba,\
     register_sym_predict, input_size_from_n_features,\
     input_size_from_n_features_, register_input_size,\
     register_sym_score_to_proba, register_sym_score_to_decision
+from ..function import Function
+from ..base import VariableFactory, syms, register_syms
+from ..function import cart
 
 # def sym_log_odds_estimator_predict(estimator):
 #     return RealNumber(estimator.prior)
@@ -25,23 +27,25 @@ from ..base import register_sym_decision_function, sym_predict,\
 # sym_init_function = call_method_or_dispatch('sym_init_function', sym_init_function_dispatcher)
 
 @register_sym_decision_function(BaseGradientBoosting)
-def sym_decision_function_gradient_boosting_classifier(estimator):
+def sym_decision_function_base_gradient_boosting(estimator):
     learning_rate = RealNumber(estimator.learning_rate)
     n_classes = estimator.estimators_.shape[1]
     trees = [list(map(sym_predict, estimator.estimators_[:,i])) for i in range(n_classes)]
-    tree_part = [learning_rate * reduce(add, trees[i]) for i in range(n_classes)]
-    init_part = sym_predict(estimator.init_)
-    if not isinstance(init_part, list):
-        init_part = [init_part]
-    result = [tree_part[i] + init_part[i] for i in range(n_classes)]
-    return tuple(result)
+    tree_part = cart(*(learning_rate * reduce(add, trees[i]) for i in range(n_classes)))
+    init_part = sym_predict(estimator.init_).concat_inputs(tree_part)
+#     if not isinstance(init_part, list):
+#         init_part = [init_part]
+    return tree_part + init_part
+#     result = [tree_part[i] + init_part[i] for i in range(n_classes)]
+#     return Function(syms(estimator), tuple(), tuple(result))
     
 @register_sym_predict_proba(GradientBoostingClassifier)
 def sym_predict_proba_gradient_boosting_classifier(estimator):
     score = sym_decision_function(estimator)
-    score_to_proba_exprs = sym_score_to_proba(estimator.loss_)
-    score_to_proba_syms = syms(estimator.loss_)
-    return tuple(score_to_proba_expr.subs({score_to_proba_syms[0]: score}) for score_to_proba_expr in score_to_proba_exprs)
+    score_to_proba = sym_score_to_proba(estimator.loss_)
+    return score_to_proba.compose(score)
+#     score_to_proba_syms = syms(estimator.loss_)
+#     return tuple(score_to_proba_expr.subs({score_to_proba_syms[0]: score}) for score_to_proba_expr in score_to_proba_exprs)
 
 @register_sym_predict(GradientBoostingRegressor)
 def sym_predict_gradient_boosting_regressor(estimator):
@@ -51,41 +55,54 @@ register_input_size(BaseGradientBoosting, input_size_from_n_features if LooseVer
 
 @register_sym_predict(PriorProbabilityEstimator)
 def sym_predict_prior_probability_estimator(estimator):
-    result = map(RealNumber, estimator.priors)
-    if len(result) == 1:
-        return result[0]
-    else:
-        return result
+    return Function(tuple(), tuple(), tuple(map(RealNumber, estimator.priors)))
+#     result = map(RealNumber, estimator.priors)
+#     
+#     
+#     if len(result) == 1:
+#         return result[0]
+#     else:
+#         return result
 
 @register_sym_predict(QuantileEstimator)
 def sym_predict_quantile_estimator(estimator):
-    return RealNumber(estimator.quantile)
+    return Function(tuple(), tuple(), (RealNumber(estimator.quantile),))
+
 
 @register_sym_predict(LogOddsEstimator)
 def sym_predict_log_odds_estimator(estimator):
-    return RealNumber(estimator.prior)
+    return Function(tuple(), tuple(), (RealNumber(estimator.prior),))
+
 
 @register_sym_predict(MeanEstimator)
 def sym_predict_mean_estimator(estimator):
-    return RealNumber(estimator.mean)
+    return Function(tuple(), tuple(), (RealNumber(estimator.mean),))
 
 @register_sym_predict(ZeroEstimator)
 def sym_predict_zero_estimator(estimator):
-    return Zero()
+    return Function(tuple(), tuple(), (Zero(),))
 
 @register_syms(LossFunction)
 def syms_loss_function(loss):
-    return [Symbol('x')]
+    return (Symbol('x'),)
 
 @register_sym_score_to_proba(BinomialDeviance)
 def sym_score_to_proba_binomial_deviance(loss):
-    symbols = syms(loss)
-    assert len(symbols) == 1
-    return (1 - Expit(symbols[0]), Expit(symbols[0]))
+    inputs = syms(loss)
+    calls = tuple()
+    outputs = (1 - Expit(inputs[0]), Expit(inputs[0]))
+    return Function(inputs, calls, outputs)
 
 @register_sym_score_to_decision(BinomialDeviance)
 def sym_score_to_decision(loss):
-    return Piecewise((RealNumber(1), sym_score_to_proba(loss) > RealNumber(1)/RealNumber(2)), (RealNumber(0), true))
+    score_to_proba = sym_score_to_proba(loss)
+    Var = VariableFactory()
+#     inputs = syms(loss)
+    proba = Var()
+    inputs = (proba,)
+    calls = tuple()
+    outputs = (Piecewise((RealNumber(1), proba > RealNumber(1)/RealNumber(2)), (RealNumber(0), true)),)
+    return Function(inputs, calls, outputs).compose(score_to_proba)
 
 
 

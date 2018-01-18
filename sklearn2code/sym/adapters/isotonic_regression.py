@@ -6,9 +6,9 @@ from sympy.core.symbol import Symbol
 from sklearn.isotonic import IsotonicRegression
 from numpy.testing.utils import assert_array_almost_equal
 import numpy as np
-from ..syms import syms, register_syms
 from ..sympy_special_values import NAN
 from ..base import register_sym_predict
+from ..base import syms, register_syms
 
 @register_syms(IsotonicRegression)
 def syms_isotonic_regression(estimator):

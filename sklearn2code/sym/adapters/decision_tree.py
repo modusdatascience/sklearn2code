@@ -1,10 +1,10 @@
 from sympy.core.numbers import RealNumber
 from sympy.functions.elementary.piecewise import Piecewise
-from ..syms import syms
 from sklearn.tree.tree import DecisionTreeRegressor
 from ..base import register_sym_predict,\
     input_size_from_n_features_, register_input_size
-from sklearn2code.sym.function import Function
+from ..function import Function
+from ..base import syms
 
 def _inner_sym_predict_decision_tree_regressor(model, symbols, current_node=0, output_idx=0, class_idx=0):
     left = model.tree_.children_left[current_node]
@@ -27,6 +27,6 @@ def sym_predict_decision_tree_regressor(estimator):
     result = []
     for output_idx in range(n_outputs):
         result.append(_inner_sym_predict_decision_tree_regressor(estimator, symbols, output_idx=output_idx))
-    return Function(symbols, {}, tuple(result), origin=estimator)
+    return Function(symbols, tuple(), tuple(result))
 
 register_input_size(DecisionTreeRegressor, input_size_from_n_features_)
