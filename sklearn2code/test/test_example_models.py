@@ -1,13 +1,18 @@
+'''
+Generate and test all cases using the numpy_flat language.
+'''
 import numpy as np
 from sklearn.ensemble.gradient_boosting import GradientBoostingClassifier
 from sklearn.base import clone
 from toolz.dicttoolz import merge
-from sklearn2code.sym.printers import model_to_code, exec_module
 from numpy.ma.testutils import assert_array_almost_equal
 from six import PY2, PY3
 from pandas import DataFrame
+from sklearn2code.languages import numpy_flat
+from sklearn2code.sklearn2code import sklearn2code
+from sklearn2code.utilty import exec_module
 
-def create_weird_regression_problem_1(m=1000, n=10):
+def create_weird_classification_problem_1(m=1000, n=10):
     X = DataFrame(np.random.normal(size=(m,n)), columns=['x%d' % i for i in range(n)])
     thresh = np.random.normal(size=n)
     X_transformed = X * (X > thresh)
@@ -16,10 +21,8 @@ def create_weird_regression_problem_1(m=1000, n=10):
     return (dict(X=X), dict(y=y))
 
 test_cases = [
-              (GradientBoostingClassifier(max_depth=10, n_estimators=10), ['predict_proba'], create_weird_regression_problem_1()),
-              
+              (GradientBoostingClassifier(max_depth=10, n_estimators=10), ['predict_proba'], create_weird_classification_problem_1()),
               ]
-
 
 # Create tests
 def create_case(estimator, methods, predictor_data, response_data):
@@ -29,13 +32,14 @@ def create_case(estimator, methods, predictor_data, response_data):
         
         for method in  methods:
             pred = getattr(model, method)(**predictor_data)
-            if len(pred.shape) > 1:
-                pred = pred[:,1]
-            code = model_to_code(model, 'numpy', method, 'test_model')      
+            code = sklearn2code(model, method, numpy_flat)
             module = exec_module('test_module', code)
-            exported_pred = getattr(module, 'test_model')(**predictor_data['X'])
+            exported_pred = getattr(module, method)(**predictor_data['X'])
+            if isinstance(exported_pred, tuple):
+                exported_pred = DataFrame(dict(enumerate(exported_pred)))
             assert_array_almost_equal(pred, exported_pred)
-    test_case.__doc__ = 'Testing exportability of %s' % repr(estimator)
+    test_case.__doc__ = ('Testing exportability of method%s %s of %s' % 
+                         ('s' if len(methods)>1 else '', ', '.join(methods), repr(estimator)))
     return test_case
 
 # All tests will be methods of this class

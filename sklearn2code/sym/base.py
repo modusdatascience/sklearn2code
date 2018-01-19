@@ -41,56 +41,6 @@ class VariableFactory(object):
         self.current_n += 1
         return result
 
-class NamingSchemeBase(object):
-    __metaclass__ = ABCMeta
-    def name(self, function):
-        '''
-        Assign names to Function and any Functions called by Function.
-        
-        Parameters
-        ----------
-        function : instance of Function
-        
-        Returns
-        -------
-        dict with keys Functions and values strs
-        '''
-
-class SerializerBase(object):
-    __metaclass__ = ABCMeta
-    def serialize(self, functions):
-        '''
-        Serialize the function.
-        
-        Parameters
-        ----------
-        functions : dict with keys strs and values instances of Function.  The keys are typically used to 
-        name the functions.
-        
-        Returns
-        -------
-        str
-            A string representing the serialized Functions.  Usually this should be written to a file.
-        '''
-        return self._serialize(functions)
-    
-    @abstractmethod
-    def _serialize(self, function):
-        pass
-    
-class PrinterTemplateSerializer(SerializerBase):
-    def __init__(self, printer, template):
-        '''
-        Parameters
-        ----------
-        printer : An instance of a CodePrinter subclass from sympy.
-        template : A mako template.
-        
-        '''
-        self.printer = printer
-        self.template = template
-
-
 
 sym_decision_function_doc = '''
 Parameters
