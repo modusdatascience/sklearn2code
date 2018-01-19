@@ -11,6 +11,8 @@ from sympy.core.symbol import Symbol
 from .base import safe_symbol
 from six.moves import reduce
 from sklearn2code.sym.base import VariableFactory
+from networkx.classes.digraph import DiGraph
+import networkx
 
 @curry
 def tupsmap(n, fun, tups):
@@ -112,6 +114,14 @@ class Function(object):
     
     def __hash__(self):
         return hash((self.inputs, self.calls, self.outputs))
+    
+    def digraph(self):
+        g = DiGraph()
+        for _, (fun, _) in self.calls:
+            g.add_node(fun)
+            g.add_edge(fun, self)
+            g = networkx.compose(g, fun.digraph())
+        return g
     
     def compose(self, right):
         '''

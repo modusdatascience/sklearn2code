@@ -1,9 +1,11 @@
 from sklearn.ensemble.gradient_boosting import GradientBoostingClassifier
 from sklearn.base import clone
-from toolz.dicttoolz import merge
 from pandas.core.frame import DataFrame
 import numpy as np
-from sklearn2code.sym.base import sym_predict_proba
+from sklearn2code.sklearn2code import sklearn2code
+from sklearn2code.languages import numpy_flat
+from sklearn2code.utilty import exec_module
+from numpy.testing.utils import assert_array_almost_equal
 
 def test_gradient_boosting_classifier():
     m = 1000
@@ -14,12 +16,16 @@ def test_gradient_boosting_classifier():
     beta = np.random.normal(size=n)
     y = (np.dot(X_transformed, beta) + np.random.normal(size=m)) > 0
     
-#     methods = ['predict_proba']
     estimator = GradientBoostingClassifier(max_depth=10, n_estimators=10)
     model = clone(estimator)
     model.fit(X, y)
-    fun = sym_predict_proba(model)
-    print(fun)
+    code = sklearn2code(model, ['predict_proba'], numpy_flat)
+    test_module = exec_module('test_module', code)
+    
+    p = model.predict_proba(X)
+    p_code = DataFrame(dict(enumerate(test_module.predict_proba(**X))))
+    assert_array_almost_equal(p, p_code)
+    
 #     
 #     for method in  methods:
 #         pred = getattr(model, method)(**predictor_data)
