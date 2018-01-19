@@ -7,6 +7,7 @@ dependencies:
     - sympy
     - scikit-learn
     - six
+    - networkx
     - pip:
         - toolz==0.8.2
         - sklearn-contrib-py-earth
