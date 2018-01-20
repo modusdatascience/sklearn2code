@@ -11,6 +11,7 @@ from .sym.sympy_printers import S2CNumpyPrinter
 from mako.template import Template
 import os
 from sklearn2code.templates import template_dir
+from networkx.classes.digraph import DiGraph
 
 method_dispatcher = dict(
                          predict = sym_predict,
@@ -36,7 +37,7 @@ class Language(object):
     
     def generate(self, estimator, methods, trim, **extra_args):
         functions = tuple(map(tupapply, zip(map(method_dispatcher.__getitem__, methods), repeat(estimator))))
-        g = reduce(networkx.compose, map(methodcaller('digraph'), functions))
+        g = reduce(networkx.compose, map(methodcaller('digraph'), functions), DiGraph())
         sorted_functions = networkx.topological_sort(g)
         names = dict(zip(functions, methods))
         unnamed = tuple(filter(complement(names.__contains__), sorted_functions))

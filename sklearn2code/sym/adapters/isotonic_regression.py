@@ -9,10 +9,11 @@ import numpy as np
 from ..sympy_special_values import NAN
 from ..base import register_sym_predict
 from ..base import syms, register_syms
+from ..function import Function
 
 @register_syms(IsotonicRegression)
 def syms_isotonic_regression(estimator):
-    return [Symbol('x')]
+    return (Symbol('x'),)
 
 def sym_linear_interp(variable, lower_x, upper_x, lower_y, upper_y):
     slope = RealNumber((upper_y - lower_y) / (upper_x - lower_x))
@@ -32,7 +33,7 @@ def sym_predict_isotonic_regression(estimator):
     if estimator.out_of_bounds == 'clip':
         pieces.append((y_upper, variable < RealNumber(x_upper)))
     elif estimator.out_of_bounds == 'nan':
-        pieces.append((NAN(), variable < RealNumber(x_upper)))
+        pieces.append((NAN(1), variable < RealNumber(x_upper)))
     else:
         raise ValueError('out_of_bounds=%s not supported.' % estimator.out_of_bounds)
     
@@ -47,11 +48,11 @@ def sym_predict_isotonic_regression(estimator):
     if estimator.out_of_bounds == 'clip':
         pieces.append((y_upper, variable >= RealNumber(x_upper)))
     elif estimator.out_of_bounds == 'nan':
-        pieces.append((NAN(), variable > RealNumber(x_upper)))
+        pieces.append((NAN(1), variable >= RealNumber(x_upper)))
     else:
         raise ValueError('out_of_bounds=%s not supported.' % estimator.out_of_bounds)
     
-    return Piecewise(*pieces)
+    return Function(syms(estimator), tuple(), Piecewise(*pieces))
 
 # def predict_isotonic(estimator, value):
 #     i = bisect.bisect(estimator.f_.x, value)

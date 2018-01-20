@@ -3,6 +3,7 @@ from ..base import syms
 import numpy as np
 from sklearn.linear_model.base import LinearRegression
 from ..base import register_sym_predict
+from ..function import Function
 
 @register_sym_predict(LinearRegression)
 def sym_predict_linear(estimator):
@@ -13,5 +14,5 @@ def sym_predict_linear(estimator):
     symbols = syms(estimator)
     for coef, sym in zip(np.ravel(estimator.coef_), symbols):
         expression += RealNumber(coef) * sym
-    return expression
+    return Function(syms(estimator), tuple(), expression)
 

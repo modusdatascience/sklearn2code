@@ -77,7 +77,7 @@ class Function(object):
         return Function(new_inputs, new_calls, new_outputs)
     
     def vars(self):
-        return frozenset(self.inputs) | frozenset(reduce(__or__, tupsmap(1, frozenset, self.calls)))
+        return frozenset(self.inputs) | reduce(__or__, map(compose(frozenset, tupget(0)), self.calls), frozenset())
     
     def revar(self, existing):
         Var = VariableFactory(existing=existing)
@@ -117,6 +117,7 @@ class Function(object):
     
     def digraph(self):
         g = DiGraph()
+        g.add_node(self)
         for _, (fun, _) in self.calls:
             g.add_node(fun)
             g.add_edge(fun, self)
@@ -127,10 +128,14 @@ class Function(object):
         '''
         Compose.  Assume the outputs of right match, in order, the inputs of self.
         '''
+        left = self.revar(right.vars())
         inputs = right.inputs
-        calls = ((self.inputs, (right, right.inputs)),) + self.calls
-        outputs = self.outputs
+        calls = ((left.inputs, (right, right.inputs)),) + left.calls
+        outputs = left.outputs
         return Function(inputs, calls, outputs)
+    
+    def select_outputs(self, selection):
+        return Function(self.inputs, self.calls, tupify(self.outputs[selection]))
     
     def concat_inputs(self, other):
         return Function(self.inputs + other.inputs, self.calls, self.outputs)
