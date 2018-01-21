@@ -1,16 +1,9 @@
-from abc import abstractmethod, ABCMeta
 from ..dispatching import call_method_or_dispatch, create_registerer
-from toolz.dicttoolz import merge_with
-from itertools import starmap, repeat
-from operator import __add__, __mul__, __sub__, methodcaller
-from frozendict import frozendict
-from six import PY3, PY2
-from types import MethodType
-from toolz.functoolz import curry, flip as tzflip
-from toolz.curried import valmap
 from sympy.core.symbol import Symbol
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, ClassifierMixin
 import re
+from sympy.core.numbers import One, Zero
+from sympy.functions.elementary.piecewise import Piecewise
 
 def safe_symbol(s):
     if isinstance(s, Symbol):
@@ -146,6 +139,9 @@ NotImplementedError
 sym_predict_dispatcher = {}
 sym_predict = call_method_or_dispatch('sym_predict', sym_predict_dispatcher, docstring=sym_predict_doc)
 register_sym_predict = create_registerer(sym_predict_dispatcher, 'register_sym_predict')
+@register_sym_predict(ClassifierMixin)
+def sym_predict_classifier(estimator):
+    return sym_predict_proba(estimator).select_outputs(1).apply(lambda x: Piecewise((x >= .5, One()), Zero()))
 
 sym_score_to_decision_doc = '''
 Parameters
