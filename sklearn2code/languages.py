@@ -4,9 +4,9 @@ from itertools import repeat
 import networkx
 from six.moves import reduce
 from operator import methodcaller, __mod__
-from toolz.functoolz import curry, identity, complement, compose
+from toolz.functoolz import curry, complement, compose
 from toolz.dicttoolz import merge
-from .sym.function import tupfun, tupsmap
+from .sym.function import tupsmap
 from .sym.sympy_printers import S2CNumpyPrinter
 from mako.template import Template
 import os

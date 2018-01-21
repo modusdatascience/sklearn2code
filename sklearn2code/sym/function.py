@@ -1,13 +1,10 @@
 from toolz.functoolz import curry, flip as tzflip, identity, compose, complement
-from frozendict import frozendict
-from toolz.curried import valmap, itemmap
+from toolz.curried import itemmap
 from operator import methodcaller, __add__, __mul__, __sub__, __or__
-from itertools import repeat, starmap
-from toolz.dicttoolz import merge_with
+from itertools import starmap
 from six import PY2, PY3, string_types
 from types import MethodType
 from sklearn2code.dispatching import fallback
-from sympy.core.symbol import Symbol
 from .base import safe_symbol
 from six.moves import reduce
 from sklearn2code.sym.base import VariableFactory

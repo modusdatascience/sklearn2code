@@ -1,10 +1,7 @@
-import bisect
-from nose.tools import assert_almost_equal
 from sympy.core.numbers import RealNumber
 from sympy.functions.elementary.piecewise import Piecewise
 from sympy.core.symbol import Symbol
 from sklearn.isotonic import IsotonicRegression
-from numpy.testing.utils import assert_array_almost_equal
 import numpy as np
 from ..sympy_special_values import NAN
 from ..base import register_sym_predict
