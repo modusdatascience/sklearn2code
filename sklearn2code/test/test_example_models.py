@@ -39,9 +39,9 @@ def create_regression_problem_1(m=1000, n=10):
 
 test_cases = [
               (GradientBoostingClassifier(max_depth=10, n_estimators=10), ['predict_proba'], create_weird_classification_problem_1()),
-              (LogisticRegression(), ['predict_proba'], create_weird_classification_problem_1()),
+              (LogisticRegression(), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
               (IsotonicRegression(out_of_bounds='clip'), ['predict'], create_isotonic_regression_problem_1()),
-              (Earth(), ['predict'], create_regression_problem_1()),
+              (Earth(), ['predict', 'transform'], create_regression_problem_1()),
               ]
 
 # Create tests

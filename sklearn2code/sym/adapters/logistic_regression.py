@@ -5,7 +5,8 @@ from ..base import register_input_size, register_sym_predict,\
     input_size_from_coef, register_sym_predict_proba
 from ..function import Function
 from sklearn2code.sym.base import VariableFactory
-from sympy.core.numbers import One
+from sympy.core.numbers import One, Zero
+from sympy.functions.elementary.piecewise import Piecewise
 
 def sym_predict_proba_logistic_regression(estimator):
     linear_part = sym_predict_linear(estimator)
@@ -14,9 +15,7 @@ def sym_predict_proba_logistic_regression(estimator):
     return Function((x,), tuple(), (One() - Expit(x), Expit(x))).compose(linear_part)
 
 def sym_predict_logistic_regression(estimator):
-    return sym_predict_proba_logistic_regression(estimator).select_outputs(1)
-    
-    
+    return sym_predict_proba_logistic_regression(estimator).select_outputs(1).apply(lambda x: Piecewise((x >= .5, One()), Zero()))
 
 register_sym_predict(LogisticRegression, sym_predict_logistic_regression)
 register_input_size(LogisticRegression, input_size_from_coef)
