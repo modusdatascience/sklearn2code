@@ -141,9 +141,11 @@ class Function(object):
         return Function(self.inputs, self.calls + other.calls, self.outputs)
     
     def _merge_calls(self, other):
+        self.ensure_same_inputs(other)
         return self.calls + tuple(filter(complement(set(self.calls).__contains__), other.calls))
     
     def concat_outputs(self, other):
+        self.ensure_same_inputs(other)
         return Function(self.inputs, self.calls, self.outputs + other.outputs)
     
     def ensure_same_inputs(self, other):
