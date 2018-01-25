@@ -14,6 +14,7 @@ from sklearn2code.utilty import exec_module
 from sklearn.linear_model.logistic import LogisticRegression
 from sklearn.isotonic import IsotonicRegression
 from pyearth.earth import Earth
+from sklearn.pipeline import Pipeline
 
 def create_weird_classification_problem_1(m=1000, n=10):
     np.random.seed(1)
@@ -42,6 +43,7 @@ test_cases = [
               (LogisticRegression(), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
               (IsotonicRegression(out_of_bounds='clip'), ['predict'], create_isotonic_regression_problem_1()),
               (Earth(), ['predict', 'transform'], create_regression_problem_1()),
+              (Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]), ['predict', 'predict_proba'], create_weird_classification_problem_1()),
               ]
 
 # Create tests

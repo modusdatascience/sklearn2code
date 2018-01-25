@@ -220,7 +220,10 @@ class Function(object):
         calls, symbol_map = self._merge_calls(other)
         outputs = self.outputs + other.map_output_symbols(symbol_map)
         return Function(inputs, calls, outputs)
-    
+
+def comp(*funs):
+    return reduce(lambda x,y: x.compose(y), funs)
+
 def cart(*funs):
     return reduce(lambda x,y: x.cartesian_product(y), funs)
 
