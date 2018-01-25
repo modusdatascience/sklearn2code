@@ -153,11 +153,11 @@ class Function(object):
     def select_outputs(self, selection):
         return Function(self.inputs, self.calls, tupify(self.outputs[selection]))
     
-    def concat_inputs(self, other):
-        return Function(self.inputs + other.inputs, self.calls, self.outputs)
-    
-    def concat_calls(self, other):
-        return Function(self.inputs, self.calls + other.calls, self.outputs)
+    def append_inputs(self, inputs):
+        overlap = self.vars() & frozenset(inputs)
+        if overlap:
+            raise ValueError('Overlapping variables when appending inputs: %s' % str(overlap))
+        return Function(self.inputs + inputs, self.calls, self.outputs)
     
     def _merge_calls(self, other):
         '''
@@ -178,10 +178,6 @@ class Function(object):
 #         return (self.calls + tuple(filter(complement(set(self.calls).__contains__), 
 #                                          other.map_symbols(symbol_map).calls)),
 #                 symbol_map)
-    
-    def concat_outputs(self, other):
-        self.ensure_same_inputs(other)
-        return Function(self.inputs, self.calls, self.outputs + other.outputs)
     
     def ensure_same_inputs(self, other):
         if self.inputs != other.inputs:
