@@ -1,4 +1,4 @@
-from sympy.core.numbers import RealNumber, Zero
+from sympy.core.numbers import RealNumber, Zero, One
 from sklearn.ensemble.gradient_boosting import BinomialDeviance,\
     LogOddsEstimator, GradientBoostingClassifier, QuantileEstimator,\
     LossFunction, MeanEstimator, ZeroEstimator, GradientBoostingRegressor,\
@@ -55,7 +55,7 @@ register_input_size(BaseGradientBoosting, input_size_from_n_features if LooseVer
 
 @register_sym_predict(PriorProbabilityEstimator)
 def sym_predict_prior_probability_estimator(estimator):
-    return Function(tuple(), tuple(), tuple(map(RealNumber, estimator.priors)))
+    return Function(syms(estimator), tuple(), tuple(map(RealNumber, estimator.priors)))
 #     result = map(RealNumber, estimator.priors)
 #     
 #     
@@ -66,12 +66,12 @@ def sym_predict_prior_probability_estimator(estimator):
 
 @register_sym_predict(QuantileEstimator)
 def sym_predict_quantile_estimator(estimator):
-    return Function(tuple(), tuple(), (RealNumber(estimator.quantile),))
+    return Function(syms(estimator), tuple(), (RealNumber(estimator.quantile),))
 
 
 @register_sym_predict(LogOddsEstimator)
 def sym_predict_log_odds_estimator(estimator):
-    return Function(tuple(), tuple(), (RealNumber(estimator.prior),))
+    return Function(syms(estimator), tuple(), (RealNumber(estimator.prior),))
 
 
 @register_sym_predict(MeanEstimator)
@@ -94,14 +94,13 @@ def sym_score_to_proba_binomial_deviance(loss):
     return Function(inputs, calls, outputs)
 
 @register_sym_score_to_decision(BinomialDeviance)
-def sym_score_to_decision(loss):
+def sym_score_to_decision_binomial_deviance(loss):
     score_to_proba = sym_score_to_proba(loss)
     Var = VariableFactory()
-#     inputs = syms(loss)
-    proba = Var()
-    inputs = (proba,)
+    compl_proba, proba = (Var(), Var())
+    inputs = (compl_proba, proba)
     calls = tuple()
-    outputs = (Piecewise((RealNumber(1), proba > RealNumber(1)/RealNumber(2)), (RealNumber(0), true)),)
+    outputs = (Piecewise((One(), proba > compl_proba), (Zero(), True)),)
     return Function(inputs, calls, outputs).compose(score_to_proba)
 
 

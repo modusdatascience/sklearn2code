@@ -4,6 +4,7 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 import re
 from sympy.core.numbers import One, Zero
 from sympy.functions.elementary.piecewise import Piecewise
+from sklearn2code.dispatching import fallback
 
 def safe_symbol(s):
     if isinstance(s, Symbol):
@@ -32,7 +33,7 @@ class VariableFactory(object):
     def __call__(self):
         result = self.base + str(self.current_n)
         self.current_n += 1
-        return result
+        return Symbol(result)
 
 
 sym_decision_function_doc = '''
@@ -223,10 +224,13 @@ NotImplementedError
     When the estimator's type is not supported.
 '''
 def syms_x(estimator):
-    return [Symbol('x%d' % d) for d in range(input_size(estimator))]
+    return tuple(Symbol('x%d' % d) for d in range(input_size(estimator)))
+
+def syms_xlabels(estimator):
+    return tuple(map(Symbol, estimator.xlabels_))
 
 syms_dispatcher = {
-                   BaseEstimator: syms_x,
+                   object: fallback(syms_xlabels, syms_x),
                    }
 syms = call_method_or_dispatch('syms', syms_dispatcher, docstring=syms_doc)
 register_syms = create_registerer(syms_dispatcher, 'register_syms')

@@ -67,10 +67,12 @@ class Function(object):
 #         self.sym = SymFunctionInterface(self)
     
     def map_symbols(self, symbol_map):
-        symbol_map_ = itemmap(tupfun(safe_symbol, safe_symbol), symbol_map)
-        new_inputs = tuple(map(fallback(symbol_map_.__getitem__, identity, exception_type=KeyError), self.inputs))
-        new_calls = tupsmap(1, tupfun(identity, curry(map)(fallback(symbol_map_.__getitem__, identity, exception_type=KeyError))), self.calls)
-        new_outputs = tuple(map(methodcaller('subs', symbol_map_), self.outputs))
+        safe_sub_map = itemmap(tupfun(safe_symbol, safe_symbol), symbol_map)
+        symbol_map_ = fallback(safe_sub_map.__getitem__, identity, exception_type=KeyError)
+        symbol_tup_map = compose(tuple, curry(map)(symbol_map_))
+        new_inputs = tuple(map(symbol_map_, self.inputs))
+        new_calls = tuple(map(tupfun(symbol_tup_map, tupfun(identity, symbol_tup_map)), self.calls))
+        new_outputs = tuple(map(methodcaller('subs', safe_sub_map), self.outputs))
         return Function(new_inputs, new_calls, new_outputs)
     
     def vars(self):
@@ -183,7 +185,7 @@ class Function(object):
     def cartesian_product(self, other):
         self.ensure_same_inputs(other)
         inputs = self.inputs
-        calls = self.merge_calls(other)
+        calls = self._merge_calls(other)
         outputs = self.outputs + other.outputs
         return Function(inputs, calls, outputs)
     
