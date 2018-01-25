@@ -10,6 +10,7 @@ from six.moves import reduce
 from sklearn2code.sym.base import VariableFactory
 from networkx.classes.digraph import DiGraph
 import networkx
+from toolz.dicttoolz import merge
 
 @curry
 def tupsmap(n, fun, tups):
@@ -62,21 +63,37 @@ class Function(object):
                              tupfun(identity, compose(tuple, curry(map)(safe_symbol))), 
                              tupsmap(0, compose(tuple, curry(map)(safe_symbol)), calls))
         self.outputs = tupify(outputs)
-#         self.origin = origin
         self._validate()
-#         self.sym = SymFunctionInterface(self)
     
     def map_symbols(self, symbol_map):
+        new_inputs = self.map_input_symbols(symbol_map)
+        new_calls = self.map_call_symbols(symbol_map)
+        new_outputs = self.map_output_symbols(symbol_map)
+        return Function(new_inputs, new_calls, new_outputs)
+    
+    def map_input_symbols(self, symbol_map):
+        safe_sub_map = itemmap(tupfun(safe_symbol, safe_symbol), symbol_map)
+        symbol_map_ = fallback(safe_sub_map.__getitem__, identity, exception_type=KeyError)
+        return tuple(map(symbol_map_, self.inputs))
+    
+    def map_call_symbols(self, symbol_map):
         safe_sub_map = itemmap(tupfun(safe_symbol, safe_symbol), symbol_map)
         symbol_map_ = fallback(safe_sub_map.__getitem__, identity, exception_type=KeyError)
         symbol_tup_map = compose(tuple, curry(map)(symbol_map_))
-        new_inputs = tuple(map(symbol_map_, self.inputs))
-        new_calls = tuple(map(tupfun(symbol_tup_map, tupfun(identity, symbol_tup_map)), self.calls))
-        new_outputs = tuple(map(methodcaller('subs', safe_sub_map), self.outputs))
-        return Function(new_inputs, new_calls, new_outputs)
+        return tuple(map(tupfun(symbol_tup_map, tupfun(identity, symbol_tup_map)), self.calls))
+    
+    def map_output_symbols(self, symbol_map):
+        safe_sub_map = itemmap(tupfun(safe_symbol, safe_symbol), symbol_map)
+        return tuple(map(methodcaller('subs', safe_sub_map), self.outputs))
+    
+    def input_vars(self):
+        return frozenset(self.inputs)
+    
+    def local_vars(self):
+        return reduce(__or__, map(compose(frozenset, tupget(0)), self.calls), frozenset())
     
     def vars(self):
-        return frozenset(self.inputs) | reduce(__or__, map(compose(frozenset, tupget(0)), self.calls), frozenset())
+        return self.input_vars() | self.local_vars()
     
     def revar(self, existing):
         Var = VariableFactory(existing=existing)
@@ -143,8 +160,24 @@ class Function(object):
         return Function(self.inputs, self.calls + other.calls, self.outputs)
     
     def _merge_calls(self, other):
+        '''
+        Assume non-overlapping local variables.
+        '''
         self.ensure_same_inputs(other)
-        return self.calls + tuple(filter(complement(set(self.calls).__contains__), other.calls))
+        other_calls = other.calls
+        symbol_map = dict()
+        result = self.calls
+        existing_call_map = dict(map(reversed, self.calls))
+        for assigned, (called, passed) in other_calls:
+            if (called, passed) in existing_call_map:
+                symbol_map = merge(symbol_map, dict(zip(assigned, existing_call_map[(called, passed)])))
+            else:
+                result += ((assigned, (called, passed)),)
+        return result, symbol_map
+        
+#         return (self.calls + tuple(filter(complement(set(self.calls).__contains__), 
+#                                          other.map_symbols(symbol_map).calls)),
+#                 symbol_map)
     
     def concat_outputs(self, other):
         self.ensure_same_inputs(other)
@@ -185,8 +218,11 @@ class Function(object):
     def cartesian_product(self, other):
         self.ensure_same_inputs(other)
         inputs = self.inputs
-        calls = self._merge_calls(other)
-        outputs = self.outputs + other.outputs
+        local_vars = self.local_vars()
+        Var = VariableFactory(existing=(other.vars() | local_vars))
+        other = other.map_symbols({var: Var() for var in local_vars})
+        calls, symbol_map = self._merge_calls(other)
+        outputs = self.outputs + other.map_output_symbols(symbol_map)
         return Function(inputs, calls, outputs)
     
 def cart(*funs):
@@ -196,9 +232,12 @@ def funop(op, cls, name, flip=False):
     def __op__(self, other):
         if isinstance(other, Function):
             self.ensure_same_inputs(other)
+            local_vars = self.local_vars()
+            Var = VariableFactory(existing=(other.vars() | local_vars))
+            other = other.map_symbols({var: Var() for var in local_vars})
             self.ensure_same_output_length(other)
-            calls = self._merge_calls(other)
-            outputs = tuple(starmap(op, zip(self.outputs, other.outputs)))
+            calls, symbol_map = self._merge_calls(other)
+            outputs = tuple(starmap(op, zip(self.outputs, other.map_output_symbols(symbol_map))))
         else:
             calls = self.calls
             outputs = tuple(map((curry(tzflip(op)) if not flip else curry(op))(other), self.outputs))

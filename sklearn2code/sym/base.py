@@ -229,8 +229,12 @@ def syms_x(estimator):
 def syms_xlabels(estimator):
     return tuple(map(Symbol, estimator.xlabels_))
 
+def syms_empty(estimator):
+    return tuple()
+
 syms_dispatcher = {
-                   object: fallback(syms_xlabels, syms_x),
+                   object: fallback(syms_xlabels, syms_x, syms_empty, 
+                                    exception_type=(AttributeError, NotImplementedError)),
                    }
 syms = call_method_or_dispatch('syms', syms_dispatcher, docstring=syms_doc)
 register_syms = create_registerer(syms_dispatcher, 'register_syms')

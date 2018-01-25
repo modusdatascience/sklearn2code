@@ -18,7 +18,7 @@ def test_compose():
     composed_fun = fun.compose(fun0)
     assert_equal(composed_fun.calls[0][1][0], fun0)
     assert_equal(composed_fun.inputs, fun0.inputs)
-    assert_equal(composed_fun.outputs, fun.outputs)
+    assert_equal(fun.outputs, composed_fun.map_output_symbols(dict(zip(composed_fun.calls[0][0], fun.inputs))))
 
 class TestOps(object):
     pass
