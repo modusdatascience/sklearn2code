@@ -4,9 +4,8 @@ Generate and test all cases using the numpy_flat language.
 import numpy as np
 from sklearn.ensemble.gradient_boosting import GradientBoostingClassifier
 from sklearn.base import clone
-from toolz.dicttoolz import merge
 from numpy.ma.testutils import assert_array_almost_equal
-from six import PY2, PY3
+from six import PY2
 from pandas import DataFrame
 from sklearn2code.languages import numpy_flat
 from sklearn2code.sklearn2code import sklearn2code
