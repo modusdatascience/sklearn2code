@@ -66,6 +66,21 @@ class Function(object):
         self.outputs = tupify(outputs)
         self._validate()
     
+    @classmethod
+    def from_expression(cls, expr):
+        inputs = sorted(expr.free_symbols, key=flip(getattr)('name'))
+        calls = tuple()
+        outputs = (expr,)
+        return Function(inputs, calls, outputs)
+    
+    @classmethod
+    def from_expressions(cls, exprs):
+        inputs = sorted(reduce(__or__, map(flip(getattr)('free_symbols'), exprs), frozenset()), 
+                        key=flip(getattr)('name'))
+        calls = tuple()
+        outputs = tuple(exprs)
+        return Function(inputs, calls, outputs)
+    
     def map_symbols(self, symbol_map):
         new_inputs = self.map_input_symbols(symbol_map)
         new_calls = self.map_call_symbols(symbol_map)

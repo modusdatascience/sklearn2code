@@ -20,8 +20,13 @@ def test_compose():
     assert_equal(composed_fun.inputs, fun0.inputs)
     assert_equal(fun.outputs, composed_fun.map_output_symbols(dict(zip(composed_fun.calls[0][0], fun.inputs))))
 
+def test_from_expressions():
+    fun = Function.from_expressions((Symbol('x'), Symbol('x') + Symbol('y')))
+    assert_equal(fun, Function(('x', 'y'), tuple(), (Symbol('x'), Symbol('x') + Symbol('y'))))
+
 def test_trim():
-    fun0 = Function('x', tuple(), (Symbol('x'), 1 - Symbol('x')))
+    fun0 = Function('x', ((('u',), (Function.from_expression(Symbol('x0') + Symbol('x1')), ('x', 'x'))),), 
+                    (Symbol('u'), 1 - Symbol('x')))
     fun = Function(('x', 'y'), ((('z','w'), (fun0, ('y',))),), (Symbol('x') / Symbol('w'),)).trim()
     assert_equal(fun.inputs, (Symbol('x'), Symbol('y')))
     assert_equal(fun.outputs, (Symbol('x') / Symbol('w'),))
