@@ -2,7 +2,7 @@ name: sklearn2codedev
 dependencies:
     - python=3.6.2
     - nose
-    - numpy
+    - numpy=1.13.1
     - mako
     - sympy
     - scikit-learn
