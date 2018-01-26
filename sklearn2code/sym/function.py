@@ -66,6 +66,12 @@ class Function(object):
         self.outputs = tupify(outputs)
         self._validate()
     
+    def __str__(self):
+        return 'Function(%s, %s, %s)' % (str(self.inputs), str(self.calls), str(self.outputs))
+        
+    def __repr__(self):
+        return 'Function(%s, %s, %s)' % (repr(self.inputs), repr(self.calls), repr(self.outputs))
+    
     @classmethod
     def from_expression(cls, expr):
         inputs = sorted(expr.free_symbols, key=flip(getattr)('name'))

@@ -37,11 +37,14 @@ class Language(object):
     
     def generate(self, estimator, methods, trim, **extra_args):
         functions = tuple(map(tupapply, zip(map(method_dispatcher.__getitem__, methods), repeat(estimator))))
+        print('functions =', functions)
         g = reduce(networkx.compose, map(methodcaller('digraph'), functions), DiGraph())
         sorted_functions = networkx.topological_sort(g)
+        print('sorted_functions =', sorted_functions)
         names = dict(zip(functions, methods))
         unnamed = tuple(filter(complement(names.__contains__), sorted_functions))
         names = merge(names, dict(tupsmap(1, curry(__mod__)('_f%d'), map(compose(tuple,reversed), enumerate(unnamed)))))
+        print('names =', names)
         return self.template.render(functions=sorted_functions, printer=self.printer, namer=names.__getitem__, **extra_args)
     
 numpy_flat = Language(S2CNumpyPrinter().doprint, Template(filename=os.path.join(template_dir, 'numpy_flat_template.mako.py')))
