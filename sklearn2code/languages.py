@@ -39,7 +39,7 @@ class Language(object):
         functions = tuple(map(tupapply, zip(map(method_dispatcher.__getitem__, methods), repeat(estimator))))
         print('functions =', functions)
         g = reduce(networkx.compose, map(methodcaller('digraph'), functions), DiGraph())
-        sorted_functions = networkx.topological_sort(g)
+        sorted_functions = tuple(networkx.topological_sort(g))
         print('sorted_functions =', sorted_functions)
         names = dict(zip(functions, methods))
         unnamed = tuple(filter(complement(names.__contains__), sorted_functions))
