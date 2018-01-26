@@ -9,6 +9,6 @@ setup(name='sklearn2code',
       author='Jason Rudy',
       author_email='jcrudy@gmail.com',
       packages=find_packages(),
-      package_data = {'': ['templates/*']},
+      package_data = {'sklearn2code': ['templates/*']},
       install_requires = ['scikit-learn', 'sympy', 'mako', 'networkx', 'six', 'toolz', 'multipledispatch']
      )
