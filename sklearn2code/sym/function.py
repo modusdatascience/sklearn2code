@@ -1,4 +1,5 @@
-from toolz.functoolz import curry, flip as tzflip, identity, compose, complement
+from toolz.functoolz import curry, flip as tzflip, identity, compose, complement,\
+    flip
 from toolz.curried import itemmap
 from operator import methodcaller, __add__, __mul__, __sub__, __or__
 from itertools import starmap
@@ -105,20 +106,20 @@ class Function(object):
         Remove unused computation.
         '''
         if used is None:
-            used_ = frozenset(range(self.outputs))
-        elif isinstance(used, string_types):
-            used_ = frozenset((used,))
+            used_ = frozenset(range(len(self.outputs)))
         else:
             used_ = frozenset(used)
-        trimmed_outputs = tuple(map(self.outputs.__getitem__, sorted(used)))
-        used_symbols = reduce(__or__, map(methodcaller('free_symbols'), (self.outputs[i] for i in used_)))
+        trimmed_outputs = tuple(map(self.outputs.__getitem__, sorted(used_)))
+        used_symbols = reduce(__or__, map(flip(getattr)('free_symbols'), trimmed_outputs), frozenset())
         trimmed_calls = tuple()
         for assigned, (fun, arguments) in reversed(self.calls):
             argmap = dict(zip(fun.inputs, arguments))
-            trimmed_fun = fun.trim(used_symbols)
+            trimmed_assigned = tuple(filter(used_symbols.__contains__, assigned))
+            if not trimmed_assigned:
+                continue
+            trimmed_fun = fun.trim(frozenset(i for i in range(len(assigned)) if assigned[i] in used_symbols))
             trimmed_arguments = tuple(map(argmap.__getitem__, trimmed_fun.inputs))
-            trimmed_assigned = filter(used_symbols.__contains__, assigned)
-            trimmed_calls = (trimmed_assigned, (trimmed_fun, trimmed_arguments)) + trimmed_calls
+            trimmed_calls = ((trimmed_assigned, (trimmed_fun, trimmed_arguments)),) + trimmed_calls
             used_symbols = used_symbols | frozenset(trimmed_arguments)
         trimmed_inputs = tuple(filter(used_symbols.__contains__, self.inputs))
         return Function(trimmed_inputs, trimmed_calls, trimmed_outputs)
@@ -172,13 +173,11 @@ class Function(object):
             if (called, passed) in existing_call_map:
                 symbol_map = merge(symbol_map, dict(zip(assigned, existing_call_map[(called, passed)])))
             else:
-                result += ((assigned, (called, passed)),)
+                result += ((assigned, (called, 
+                                       tuple(map(fallback(symbol_map.__getitem__, identity, exception_type=KeyError), 
+                                                 passed)))),)
         return result, symbol_map
         
-#         return (self.calls + tuple(filter(complement(set(self.calls).__contains__), 
-#                                          other.map_symbols(symbol_map).calls)),
-#                 symbol_map)
-    
     def ensure_same_inputs(self, other):
         if self.inputs != other.inputs:
                 raise ValueError('Inputs don\'t match: %s != %s' % 

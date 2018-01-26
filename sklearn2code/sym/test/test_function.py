@@ -14,12 +14,19 @@ def test_map_symbols():
 
 def test_compose():
     fun0 = Function('x', tuple(), (Symbol('x'), 1 - Symbol('x')))
-    fun = Function(('z', 'y'), tuple(), (Symbol('z') / Symbol('y'),))
+    fun = Function(('x', 'y'), tuple(), (Symbol('x') / Symbol('y'),))
     composed_fun = fun.compose(fun0)
     assert_equal(composed_fun.calls[0][1][0], fun0)
     assert_equal(composed_fun.inputs, fun0.inputs)
     assert_equal(fun.outputs, composed_fun.map_output_symbols(dict(zip(composed_fun.calls[0][0], fun.inputs))))
 
+def test_trim():
+    fun0 = Function('x', tuple(), (Symbol('x'), 1 - Symbol('x')))
+    fun = Function(('x', 'y'), ((('z','w'), (fun0, ('y',))),), (Symbol('x') / Symbol('w'),)).trim()
+    assert_equal(fun.inputs, (Symbol('x'), Symbol('y')))
+    assert_equal(fun.outputs, (Symbol('x') / Symbol('w'),))
+    assert_equal(fun.calls, (((Symbol('w'),), (Function(('x', ), tuple(), (1-Symbol('x'),)), (Symbol('y'),))),))
+    
 class TestOps(object):
     pass
 
