@@ -56,7 +56,6 @@ def create_case(estimator, methods, fit_data, predict_data, export_predict_data)
         for method in  methods:
             pred = getattr(model, method)(**predict_data)
             code = sklearn2code(model, method, numpy_flat)
-            print(code)
             module = exec_module('test_module', code)
             exported_pred = getattr(module, method)(**export_predict_data['X'])
             if isinstance(exported_pred, tuple):
