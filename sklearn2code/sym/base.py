@@ -1,10 +1,9 @@
-from ..dispatching import call_method_or_dispatch, create_registerer
 from sympy.core.symbol import Symbol
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import ClassifierMixin
 import re
 from sympy.core.numbers import One, Zero
 from sympy.functions.elementary.piecewise import Piecewise
-from sklearn2code.dispatching import fallback
+from ..dispatching import fallback, call_method_or_dispatch
 
 def safe_symbol(s):
     if isinstance(s, Symbol):
@@ -55,9 +54,7 @@ NotImplementedError
     When the estimator's type is not supported.
 
 '''
-sym_decision_function_dispatcher = {}
-sym_decision_function = call_method_or_dispatch('sym_decision_function', sym_decision_function_dispatcher, docstring=sym_decision_function_doc)
-register_sym_decision_function = create_registerer(sym_decision_function_dispatcher, 'register_sym_decision_function')
+sym_decision_function = call_method_or_dispatch('sym_decision_function', docstring=sym_decision_function_doc)
 
 sym_predict_proba_doc = '''
 Parameters
@@ -78,9 +75,7 @@ NotImplementedError
     When the estimator's type is not supported.
 
 '''
-sym_predict_proba_dispatcher = {}
-sym_predict_proba = call_method_or_dispatch('sym_predict_proba', sym_predict_proba_dispatcher, docstring=sym_predict_proba_doc)
-register_sym_predict_proba = create_registerer(sym_predict_proba_dispatcher, 'register_sym_predict_proba')
+sym_predict_proba = call_method_or_dispatch('sym_predict_proba', docstring=sym_predict_proba_doc)
 
 
 def input_size_from_coef(estimator):
@@ -93,7 +88,6 @@ def input_size_from_n_features_(estimator):
 
 def input_size_from_n_features(estimator):
     return estimator.n_features
-
 
 input_size_doc = '''
 Parameters
@@ -114,9 +108,7 @@ NotImplementedError
     When the estimator's type is not supported.
 
 '''
-input_size_dispatcher = {}
-input_size = call_method_or_dispatch('input_size', input_size_dispatcher)
-register_input_size = create_registerer(input_size_dispatcher, 'register_input_size')
+input_size = call_method_or_dispatch('input_size', docstring=input_size_doc)
 
 sym_predict_doc = '''
 Parameters
@@ -137,10 +129,8 @@ NotImplementedError
     When the estimator's type is not supported.
 
 '''
-sym_predict_dispatcher = {}
-sym_predict = call_method_or_dispatch('sym_predict', sym_predict_dispatcher, docstring=sym_predict_doc)
-register_sym_predict = create_registerer(sym_predict_dispatcher, 'register_sym_predict')
-@register_sym_predict(ClassifierMixin)
+sym_predict = call_method_or_dispatch('sym_predict', docstring=sym_predict_doc)
+@sym_predict.register(ClassifierMixin)
 def sym_predict_classifier(estimator):
     return sym_predict_proba(estimator).select_outputs(1).apply(lambda x: Piecewise((x >= .5, One()), Zero()))
 
@@ -159,10 +149,7 @@ Raises
 NotImplementedError
     When the loss's type is not supported.
 '''
-sym_score_to_decision_dispatcher = {}
-sym_score_to_decision = call_method_or_dispatch('sym_score_to_decision', sym_score_to_decision_dispatcher, docstring=sym_score_to_decision_doc)
-register_sym_score_to_decision = create_registerer(sym_score_to_decision_dispatcher, 'register_sym_score_to_decision')
-
+sym_score_to_decision = call_method_or_dispatch('sym_score_to_decision', docstring=sym_score_to_decision_doc)
 
 sym_score_to_proba_doc = '''
 Parameters
@@ -179,9 +166,7 @@ Raises
 NotImplementedError
     When the loss's type is not supported.
 '''
-sym_score_to_proba_dispatcher = {}
-sym_score_to_proba = call_method_or_dispatch('sym_score_to_proba', sym_score_to_proba_dispatcher, docstring=sym_score_to_proba_doc)
-register_sym_score_to_proba = create_registerer(sym_score_to_proba_dispatcher, 'register_sym_score_to_proba')
+sym_score_to_proba = call_method_or_dispatch('sym_score_to_proba', docstring=sym_score_to_proba_doc)
 
 sym_transform_doc = '''
 Parameters
@@ -201,9 +186,7 @@ NotFittedError
 NotImplementedError
     When the estimator's type is not supported.
 '''
-sym_transform_dispatcher = {}
-sym_transform = call_method_or_dispatch('sym_transform', sym_transform_dispatcher, docstring=sym_transform_doc)
-register_sym_transform = create_registerer(sym_transform_dispatcher, 'register_sym_transform')
+sym_transform = call_method_or_dispatch('sym_transform', docstring=sym_transform_doc)
 
 syms_doc = '''
 Parameters
@@ -232,12 +215,9 @@ def syms_xlabels(estimator):
 def syms_empty(estimator):
     return tuple()
 
-syms_dispatcher = {
-                   object: fallback(syms_xlabels, syms_x, syms_empty, 
-                                    exception_type=(AttributeError, NotImplementedError)),
-                   }
-syms = call_method_or_dispatch('syms', syms_dispatcher, docstring=syms_doc)
-register_syms = create_registerer(syms_dispatcher, 'register_syms')
+syms = call_method_or_dispatch('syms', docstring=syms_doc)
+syms.register(object, fallback(syms_xlabels, syms_x, syms_empty, 
+                                    exception_type=(AttributeError, NotImplementedError)))
 
 
 

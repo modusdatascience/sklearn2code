@@ -1,17 +1,15 @@
 from .linear_regression import sym_predict_linear
 from sklearn.linear_model.logistic import LogisticRegression
 from ..sympy_special_values import Expit
-from ..base import register_input_size,\
-    input_size_from_coef, register_sym_predict_proba
 from ..function import Function
-from sklearn2code.sym.base import VariableFactory
+from ..base import VariableFactory, sym_predict_proba, input_size_from_coef, input_size
 from sympy.core.numbers import One
 
-@register_sym_predict_proba(LogisticRegression)
+@sym_predict_proba.register(LogisticRegression)
 def sym_predict_proba_logistic_regression(estimator):
     linear_part = sym_predict_linear(estimator)
     Var = VariableFactory()
     x = Var()
     return Function((x,), tuple(), (One() - Expit(x), Expit(x))).compose(linear_part)
 
-register_input_size(LogisticRegression, input_size_from_coef)
+input_size.register(LogisticRegression, input_size_from_coef)

@@ -1,10 +1,11 @@
 from sympy.core.numbers import RealNumber
 from sympy.functions.elementary.piecewise import Piecewise
 from sklearn.tree.tree import DecisionTreeRegressor
-from ..base import register_sym_predict,\
-    input_size_from_n_features_, register_input_size
+from ..base import sym_predict,\
+    input_size_from_n_features_
 from ..function import Function
 from ..base import syms
+from sklearn2code.sym.base import input_size
 
 def _inner_sym_predict_decision_tree_regressor(model, symbols, current_node=0, output_idx=0, class_idx=0):
     left = model.tree_.children_left[current_node]
@@ -20,7 +21,7 @@ def _inner_sym_predict_decision_tree_regressor(model, symbols, current_node=0, o
                      (right_expr, symbols[model.tree_.feature[current_node]] > model.tree_.threshold[current_node]),
                      )
 
-@register_sym_predict(DecisionTreeRegressor)
+@sym_predict.register(DecisionTreeRegressor)
 def sym_predict_decision_tree_regressor(estimator):
     n_nodes, n_outputs, n_classes = estimator.tree_.value.shape  # @UnusedVariable
     symbols = syms(estimator)
@@ -29,4 +30,4 @@ def sym_predict_decision_tree_regressor(estimator):
         result.append(_inner_sym_predict_decision_tree_regressor(estimator, symbols, output_idx=output_idx))
     return Function(symbols, tuple(), tuple(result))
 
-register_input_size(DecisionTreeRegressor, input_size_from_n_features_)
+input_size.register(DecisionTreeRegressor, input_size_from_n_features_)

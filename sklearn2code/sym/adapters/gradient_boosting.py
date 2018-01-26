@@ -6,27 +6,19 @@ from sklearn.ensemble.gradient_boosting import BinomialDeviance,\
 from operator import add
 from sympy.core.symbol import Symbol
 from sympy.functions.elementary.piecewise import Piecewise
-from sympy.logic.boolalg import true
 from distutils.version import LooseVersion
 import sklearn
 from six.moves import reduce
 from ..sympy_special_values import Expit
-from ..base import register_sym_decision_function, sym_predict,\
-    register_sym_predict_proba, sym_decision_function, sym_score_to_proba,\
-    register_sym_predict, input_size_from_n_features,\
-    input_size_from_n_features_, register_input_size,\
-    register_sym_score_to_proba, register_sym_score_to_decision
+from ..base import sym_predict,\
+    sym_decision_function, sym_score_to_proba,\
+    input_size_from_n_features,\
+    input_size_from_n_features_, sym_score_to_decision
 from ..function import Function
-from ..base import VariableFactory, syms, register_syms
+from ..base import VariableFactory, syms, sym_predict_proba, input_size
 from ..function import cart
 
-# def sym_log_odds_estimator_predict(estimator):
-#     return RealNumber(estimator.prior)
-# 
-# sym_init_function_dispatcher = {LogOddsEstimator: sym_log_odds_estimator_predict}
-# sym_init_function = call_method_or_dispatch('sym_init_function', sym_init_function_dispatcher)
-
-@register_sym_decision_function(BaseGradientBoosting)
+@sym_decision_function.register(BaseGradientBoosting)
 def sym_decision_function_base_gradient_boosting(estimator):
     learning_rate = RealNumber(estimator.learning_rate)
     n_classes = estimator.estimators_.shape[1]
@@ -35,50 +27,50 @@ def sym_decision_function_base_gradient_boosting(estimator):
     init_part = sym_predict(estimator.init_).append_inputs(tree_part.inputs)
     return tree_part + init_part
     
-@register_sym_predict_proba(GradientBoostingClassifier)
+@sym_predict_proba.register(GradientBoostingClassifier)
 def sym_predict_proba_gradient_boosting_classifier(estimator):
     score = sym_decision_function(estimator)
     score_to_proba = sym_score_to_proba(estimator.loss_)
     return score_to_proba.compose(score)
 
-@register_sym_predict(GradientBoostingRegressor)
+@sym_predict.register(GradientBoostingRegressor)
 def sym_predict_gradient_boosting_regressor(estimator):
     return sym_decision_function(estimator)
 
-register_input_size(BaseGradientBoosting, input_size_from_n_features if LooseVersion(sklearn.__version__) < LooseVersion('0.19') else input_size_from_n_features_)
+input_size.register(BaseGradientBoosting, input_size_from_n_features if LooseVersion(sklearn.__version__) < LooseVersion('0.19') else input_size_from_n_features_)
 
-@register_sym_predict(PriorProbabilityEstimator)
+@sym_predict.register(PriorProbabilityEstimator)
 def sym_predict_prior_probability_estimator(estimator):
     return Function(syms(estimator), tuple(), tuple(map(RealNumber, estimator.priors)))
 
-@register_sym_predict(QuantileEstimator)
+@sym_predict.register(QuantileEstimator)
 def sym_predict_quantile_estimator(estimator):
     return Function(syms(estimator), tuple(), (RealNumber(estimator.quantile),))
 
-@register_sym_predict(LogOddsEstimator)
+@sym_predict.register(LogOddsEstimator)
 def sym_predict_log_odds_estimator(estimator):
     return Function(syms(estimator), tuple(), (RealNumber(estimator.prior),))
 
-@register_sym_predict(MeanEstimator)
+@sym_predict.register(MeanEstimator)
 def sym_predict_mean_estimator(estimator):
     return Function(tuple(), tuple(), (RealNumber(estimator.mean),))
 
-@register_sym_predict(ZeroEstimator)
+@sym_predict.register(ZeroEstimator)
 def sym_predict_zero_estimator(estimator):
     return Function(tuple(), tuple(), (Zero(),))
 
-@register_syms(LossFunction)
+@syms.register(LossFunction)
 def syms_loss_function(loss):
     return (Symbol('x'),)
 
-@register_sym_score_to_proba(BinomialDeviance)
+@sym_score_to_proba.register(BinomialDeviance)
 def sym_score_to_proba_binomial_deviance(loss):
     inputs = syms(loss)
     calls = tuple()
     outputs = (1 - Expit(inputs[0]), Expit(inputs[0]))
     return Function(inputs, calls, outputs)
 
-@register_sym_score_to_decision(ClassificationLossFunction)
+@sym_score_to_decision.register(ClassificationLossFunction)
 def sym_score_to_decision_binomial_deviance(loss):
     score_to_proba = sym_score_to_proba(loss)
     Var = VariableFactory()

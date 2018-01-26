@@ -2,10 +2,10 @@ from sympy.core.numbers import RealNumber
 from ..base import syms
 import numpy as np
 from sklearn.linear_model.base import LinearRegression
-from ..base import register_sym_predict
+from ..base import sym_predict
 from ..function import Function
 
-@register_sym_predict(LinearRegression)
+@sym_predict.register(LinearRegression)
 def sym_predict_linear(estimator):
     if hasattr(estimator, 'intercept_'):
         expression = RealNumber(estimator.intercept_[0])

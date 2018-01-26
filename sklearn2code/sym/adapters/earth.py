@@ -1,28 +1,26 @@
 from pyearth.earth import Earth
 from pyearth.export import export_sympy, export_sympy_term_expressions
 from sympy.core.symbol import Symbol
-from ..base import register_input_size, register_sym_predict,\
-    register_sym_transform
-from ..base import register_syms
 from ..base import syms
 from ..function import Function, tupify
+from sklearn2code.sym.base import sym_predict, sym_transform, input_size
 
-@register_input_size(Earth)
+@input_size.register(Earth)
 def input_size_earth(estimator):
     return len(estimator.xlabels_)
 
-@register_syms(Earth)
+@syms.register(Earth)
 def syms_earth(estimator):
     return [Symbol(label) for label in estimator.xlabels_]
 
-@register_sym_transform(Earth)
+@sym_transform.register(Earth)
 def sym_transform_earth(estimator):
     inputs = syms(estimator)
     calls = tuple()
     outputs = tuple(export_sympy_term_expressions(estimator))
     return Function(inputs, calls, outputs)
 
-@register_sym_predict(Earth)
+@sym_predict.register(Earth)
 def sym_predict_earth(estimator):
     inputs = syms(estimator)
     calls = tuple()

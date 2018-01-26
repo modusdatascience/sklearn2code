@@ -1,21 +1,26 @@
 from toolz.functoolz import curry
 
-
-def call_method_or_dispatch(method_name, dispatcher, docstring=None):
-    def _call_method_or_dispatch(estimator, *args, **kwargs):
+class call_method_or_dispatch(object):
+    def __init__(self, method_name, docstring):
+        self.__name__ = method_name
+        self.dispatcher = dict()
+        self.__doc__ = docstring
+        
+    def __call__(self, estimator, *args, **kwargs):
         try:
-            return getattr(estimator, method_name)(*args, **kwargs)
+            return getattr(estimator, self.__name__)(*args, **kwargs)
         except AttributeError:
             for klass in type(estimator).mro():
-                if klass in dispatcher:
-                    return dispatcher[klass](estimator, *args, **kwargs)
-            raise NotImplementedError('Class %s does not have an implementation for %s.' % (type(estimator).__name__, method_name))
+                if klass in self.dispatcher:
+                    return self.dispatcher[klass](estimator, *args, **kwargs)
+            raise NotImplementedError('Class %s does not have an implementation for %s.' % (type(estimator).__name__, self.__name__))
         except:
             raise
-    _call_method_or_dispatch.__name__ = method_name
-    if docstring is not None:
-        _call_method_or_dispatch.__doc__ = docstring
-    return _call_method_or_dispatch
+    
+    @curry
+    def register(self, cls, fun):
+        self.dispatcher[cls] = fun
+        return fun
 
 def fallback(*args, exception_type=AttributeError):
     def _fallback(*inner_args, **kwargs):
@@ -28,11 +33,3 @@ def fallback(*args, exception_type=AttributeError):
                     raise
     _fallback.__name__ = args[0].__name__
     return _fallback
-
-def create_registerer(dispatcher, name):
-    @curry
-    def _register(cls, function):
-        dispatcher[cls] = function
-        return function
-    _register.__name__ = name
-    return _register
