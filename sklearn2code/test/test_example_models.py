@@ -1,20 +1,19 @@
-'''
-Generate and test all cases using the numpy_flat language.
-'''
 import numpy as np
 from sklearn.ensemble.gradient_boosting import GradientBoostingClassifier
 from sklearn.base import clone
 from numpy.ma.testutils import assert_array_almost_equal
 from six import PY2
 from pandas import DataFrame
-from sklearn2code.languages import numpy_flat
+from sklearn2code.languages import numpy_flat, pandas
 from sklearn2code.sklearn2code import sklearn2code
 from sklearn2code.utilty import exec_module
 from sklearn.linear_model.logistic import LogisticRegression
 from sklearn.isotonic import IsotonicRegression
 from pyearth.earth import Earth
 from sklearn.pipeline import Pipeline, FeatureUnion
-
+if PY2:
+    from types import MethodType
+    
 def create_weird_classification_problem_1(m=1000, n=10):
     np.random.seed(1)
     X = DataFrame(np.random.normal(size=(m,n)), columns=['x%d' % i for i in range(n)])
@@ -28,7 +27,7 @@ def create_isotonic_regression_problem_1(m=1000):
     np.random.seed(1)
     X = np.random.normal(size=m)
     y = np.random.normal(X)
-    return (dict(X=X, y=y), dict(T=X), dict(X=dict(x=X)))
+    return (dict(X=X, y=y), dict(T=X), dict(X=DataFrame(dict(x=X))))
 
 def create_regression_problem_1(m=1000, n=10):
     np.random.seed(1)
@@ -47,8 +46,8 @@ test_cases = [
                ['transform'], create_weird_classification_problem_1())
               ]
 
-# Create tests
-def create_case(estimator, methods, fit_data, predict_data, export_predict_data):
+# Create tests for numpy_flat language
+def create_case_numpy_flat(estimator, methods, fit_data, predict_data, export_predict_data):
     def test_case(self):
         model = clone(estimator)
         model.fit(**fit_data)
@@ -61,26 +60,57 @@ def create_case(estimator, methods, fit_data, predict_data, export_predict_data)
             if isinstance(exported_pred, tuple):
                 exported_pred = DataFrame(dict(enumerate(exported_pred)))
             assert_array_almost_equal(pred, exported_pred)
-    test_case.__doc__ = ('Testing exportability of method%s %s of %s' % 
+    test_case.__doc__ = ('Testing numpy_flat language exportability of method%s %s of %s' % 
                          ('s' if len(methods)>1 else '', ', '.join(methods), repr(estimator)))
     return test_case
 
 # All tests will be methods of this class
-class TestExampleEstimators(object):
+class TestExampleEstimatorsNumpyFlat(object):
     pass
 
-if PY2:
-    from types import MethodType
 
 # The following loop adds a method to TestExampleEstimators for each test case
 for i, (estimator, methods, (fit_data, predict_data, export_predict_data)) in enumerate(test_cases):
-    case = create_case(estimator, methods, fit_data, predict_data, export_predict_data)
+    case = create_case_numpy_flat(estimator, methods, fit_data, predict_data, export_predict_data)
     case_name = 'test_case_%d' % i
     case.__name__ = case_name
     if PY2:
-        case = MethodType(case, None, TestExampleEstimators)
-    setattr(TestExampleEstimators, case_name, case)
+        case = MethodType(case, None, TestExampleEstimatorsNumpyFlat)
+    setattr(TestExampleEstimatorsNumpyFlat, case_name, case)
     del case
+
+# Create tests for pandas language
+def create_case_pandas(estimator, methods, fit_data, predict_data, export_predict_data):
+    def test_case(self):
+        model = clone(estimator)
+        model.fit(**fit_data)
+        
+        for method in  methods:
+            pred = DataFrame(getattr(model, method)(**predict_data))
+            code = sklearn2code(model, method, pandas)
+            module = exec_module('test_module', code)
+            exported_pred = getattr(module, method)(export_predict_data['X'])
+            assert_array_almost_equal(pred, exported_pred)
+    test_case.__doc__ = ('Testing pandas language exportability of method%s %s of %s' % 
+                         ('s' if len(methods)>1 else '', ', '.join(methods), repr(estimator)))
+    return test_case
+
+# All tests will be methods of this class
+class TestExampleEstimatorsPandas(object):
+    pass
+
+# The following loop adds a method to TestExampleEstimators for each test case
+for i, (estimator, methods, (fit_data, predict_data, export_predict_data)) in enumerate(test_cases):
+    case = create_case_pandas(estimator, methods, fit_data, predict_data, export_predict_data)
+    case_name = 'test_case_%d' % i
+    case.__name__ = case_name
+    if PY2:
+        case = MethodType(case, None, TestExampleEstimatorsPandas)
+    setattr(TestExampleEstimatorsPandas, case_name, case)
+    del case
+
+
+
 
 if __name__ == '__main__':
     # This code will run the test in this file.'

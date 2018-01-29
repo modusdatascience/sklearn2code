@@ -12,6 +12,7 @@ from mako.template import Template
 import os
 from sklearn2code.templates import template_dir
 from networkx.classes.digraph import DiGraph
+from sklearn2code.sym.sympy_printers import S2CPandasPrinter
 
 method_dispatcher = dict(
                          predict = sym_predict,
@@ -45,6 +46,6 @@ class Language(object):
         return self.template.render(functions=sorted_functions, printer=self.printer, namer=names.__getitem__, **extra_args)
     
 numpy_flat = Language(S2CNumpyPrinter().doprint, Template(filename=os.path.join(template_dir, 'numpy_flat_template.mako.py')))
-
+pandas = Language(S2CPandasPrinter().doprint, Template(filename=os.path.join(template_dir, 'pandas_template.mako.py')))
 
 

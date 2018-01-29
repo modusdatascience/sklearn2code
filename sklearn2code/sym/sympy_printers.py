@@ -57,6 +57,11 @@ class S2CNumpyPrinter(NumPyPrinter):
     def _print_NAN(self, expr):
         return 'nan'
 
+class S2CPandasPrinter(S2CNumpyPrinter):
+    def _print_Symbol(self, expr):
+        return 'asarray(dataframe[\'' + expr.name + '\'])'
+    
+    
 class S2CPythonPrinter(PythonPrinter):
     def _print_Float(self, expr):
         return str(expr)
