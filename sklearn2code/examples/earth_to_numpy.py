@@ -23,9 +23,8 @@ boston_housing_module = exec_module('boston_housing_module', code)
 
 # Confirm that the generated module produces output identical
 # to the fitted model's predict method.
-model_prediction = model.predict(X)
-module_prediction = boston_housing_module.predict(**X)
-assert_array_almost_equal(model_prediction, module_prediction)
+assert_array_almost_equal(model.predict(X), 
+                          boston_housing_module.predict(**X))
 
 # Print the generated code (using yapf for formatting).
 print(FormatCode(code, style_config='pep8')[0])
