@@ -1,4 +1,3 @@
-from .sym.base import sym_predict, sym_predict_proba, sym_transform
 from .sym.function import tupify
 
 
