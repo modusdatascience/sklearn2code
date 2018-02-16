@@ -11,7 +11,10 @@ from sklearn.linear_model.logistic import LogisticRegression
 from sklearn.isotonic import IsotonicRegression
 from pyearth.earth import Earth
 from sklearn.pipeline import Pipeline, FeatureUnion
-from sklearn.linear_model.coordinate_descent import Lasso
+from sklearn.linear_model.coordinate_descent import Lasso, ElasticNet,\
+    ElasticNetCV, LassoCV
+from sklearn.linear_model.ridge import Ridge, RidgeCV
+from sklearn.linear_model.stochastic_gradient import SGDRegressor
 if PY2:
     from types import MethodType
     
@@ -40,6 +43,12 @@ def create_regression_problem_1(m=1000, n=10):
 test_cases = [
             (GradientBoostingClassifier(max_depth=10, n_estimators=10), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
             (LogisticRegression(), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
+            (ElasticNet(), ['predict'], create_regression_problem_1()),
+            (ElasticNetCV(), ['predict'], create_regression_problem_1()),
+            (LassoCV(), ['predict'], create_regression_problem_1()),
+            (Ridge(), ['predict'], create_regression_problem_1()), 
+            (RidgeCV(), ['predict'], create_regression_problem_1()), 
+            (SGDRegressor(), ['predict'], create_regression_problem_1()),
             (Lasso(), ['predict'], create_regression_problem_1()),
             (IsotonicRegression(out_of_bounds='clip'), ['predict'], create_isotonic_regression_problem_1()),
             (Earth(), ['predict', 'transform'], create_regression_problem_1()),

@@ -1,13 +1,13 @@
 from sympy.core.numbers import RealNumber
 from ..base import syms
 import numpy as np
-from sklearn.linear_model.base import LinearRegression
+from sklearn.linear_model.base import LinearModel
 from ..base import sym_predict
 from ..function import Function
-from sklearn.linear_model.coordinate_descent import Lasso
+from sklearn.linear_model.stochastic_gradient import BaseSGDRegressor
 
-@sym_predict.register(Lasso)
-@sym_predict.register(LinearRegression)
+@sym_predict.register(LinearModel)
+@sym_predict.register(BaseSGDRegressor)
 def sym_predict_linear(estimator):
     if hasattr(estimator, 'intercept_'):
         try:
