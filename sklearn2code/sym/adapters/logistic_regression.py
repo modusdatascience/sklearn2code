@@ -1,4 +1,4 @@
-from .linear_regression import sym_predict_linear
+from sklearn2code.sym.adapters.linear import sym_predict_linear
 from sklearn.linear_model.logistic import LogisticRegression
 from ..sympy_special_values import Expit
 from ..function import Function

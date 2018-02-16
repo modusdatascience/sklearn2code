@@ -11,6 +11,7 @@ from sklearn.linear_model.logistic import LogisticRegression
 from sklearn.isotonic import IsotonicRegression
 from pyearth.earth import Earth
 from sklearn.pipeline import Pipeline, FeatureUnion
+from sklearn.linear_model.coordinate_descent import Lasso
 if PY2:
     from types import MethodType
     
@@ -32,18 +33,19 @@ def create_isotonic_regression_problem_1(m=1000):
 def create_regression_problem_1(m=1000, n=10):
     np.random.seed(1)
     X = DataFrame(np.random.normal(size=(m,n)), columns=['x%d' % i for i in range(n)])
-    beta = np.random.normal(size=n)
-    y = np.random.normal(np.dot(X, beta))
+    beta = np.random.normal(size=n) *10
+    y = np.random.normal(np.dot(X, beta), .1)
     return (dict(X=X, y=y), dict(X=X), dict(X=X))
 
 test_cases = [
-              (GradientBoostingClassifier(max_depth=10, n_estimators=10), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
-              (LogisticRegression(), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
-              (IsotonicRegression(out_of_bounds='clip'), ['predict'], create_isotonic_regression_problem_1()),
-              (Earth(), ['predict', 'transform'], create_regression_problem_1()),
-              (Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]), ['predict', 'predict_proba'], create_weird_classification_problem_1()),
-              (FeatureUnion([('earth', Earth()), ('earth2', Earth(max_degree=2))], transformer_weights={'earth':1, 'earth2':2}),
-               ['transform'], create_weird_classification_problem_1())
+            (GradientBoostingClassifier(max_depth=10, n_estimators=10), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
+            (LogisticRegression(), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
+            (Lasso(), ['predict'], create_regression_problem_1()),
+            (IsotonicRegression(out_of_bounds='clip'), ['predict'], create_isotonic_regression_problem_1()),
+            (Earth(), ['predict', 'transform'], create_regression_problem_1()),
+            (Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]), ['predict', 'predict_proba'], create_weird_classification_problem_1()),
+            (FeatureUnion([('earth', Earth()), ('earth2', Earth(max_degree=2))], transformer_weights={'earth':1, 'earth2':2}),
+            ['transform'], create_weird_classification_problem_1())
               ]
 
 # Create tests for numpy_flat language
