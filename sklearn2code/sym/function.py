@@ -1,60 +1,63 @@
-from toolz.functoolz import curry, flip as tzflip, identity, compose, complement,\
+from toolz.functoolz import curry, flip as tzflip, identity, compose,\
     flip
 from toolz.curried import itemmap
 from operator import methodcaller, __add__, __mul__, __sub__, __or__
 from itertools import starmap
-from six import PY2, PY3, string_types
+from six import PY2, PY3
 from types import MethodType
 from sklearn2code.dispatching import fallback
-from .base import safe_symbol
 from six.moves import reduce
-from sklearn2code.sym.base import VariableFactory
 from networkx.classes.digraph import DiGraph
 import networkx
 from toolz.dicttoolz import merge
+from sklearn2code.utility import tupify, tupsmap, tupfun, tupget
+from sklearn2code.sym.expression import Variable, RealVariable
+import re
 
-@curry
-def tupsmap(n, fun, tups):
-    return tuple([tup[:n] + (fun(tup[n]),) + tup[(n+1):] for tup in tups])
+def safe_symbol(s):
+    if isinstance(s, Variable):
+        return s
+    return RealVariable(s)
 
-@curry
-def tupapply(tup):
-    return tup[0](*tup[1:])
-
-def tupfun(*funs):
-    def _tupfun(tup):
-        return tuple(map(tupapply, zip(funs, tup)))
-    return _tupfun
-
-@curry
-def tupget(n, tup):
-    return tup[n]
-
-def isiterable(obj):
-    return hasattr(obj, '__iter__')
-
-def tupify(obj):
-    if isiterable(obj) and not isinstance(obj, string_types):
-        return tuple(obj)
-    else:
-        return (obj,)
+class VariableFactory(object):
+    def __init__(self, base='x', existing=[]):
+        self.base = base
+        self.existing = set(map(safe_symbol, existing))
+        self.current_n = self._get_current_n()
+    
+    def _get_current_n(self):
+        regex = re.compile('%s(\d+)' % self.base)
+        result = -1
+        for sym in self.existing:
+            match = regex.match(sym.name)
+            if match:
+                val = int(match.group(1))
+                if val > result:
+                    result = val
+        result += 1
+        return result
+    
+    def __call__(self):
+        result = self.base + str(self.current_n)
+        self.current_n += 1
+        return RealVariable(result)
 
 class Function(object):
     def __init__(self, inputs, calls, outputs, origin=None):
         '''
         Parameters
         ----------
-        inputs : tuple of sympy Symbols
+        inputs : tuple of Variables
             The input variables for this function.
         
-        calls : tuple of pairs with (tuples of Symbols, pairs of Function objects and tuples of their inputs)
+        calls : tuple of pairs with (tuples of Variables, pairs of Function objects and tuples of their inputs)
             The values are other function calls made by this function.  The keys are 
-            variables to which the outputs are assigned.  The number of output symbols in the
+            variables to which the outputs are assigned.  The number of output variables in the
             key must match the number of outputs in the Function.  The length of the tuple of inputs must match the
             number of inputs for the function.  Also, no two keys may contain 
-            the same variable symbol.  These constraints are checked.
+            the same variable.  These constraints are checked.
             
-        outputs : tuple of sympy expressions
+        outputs : tuple of expressions
             The actual calculations made by this Function.  The return values of the function
             are the results of the computations expressed by the expressions.
         
@@ -67,10 +70,14 @@ class Function(object):
         self._validate()
     
     def __str__(self):
-        return 'Function(%s, %s, %s)' % (str(self.inputs), str(self.calls), str(self.outputs))
+        return 'Function(%s, %s, %s)' % ('('+', '.join(map(str, self.inputs)) + ')', 
+                                         '('+', '.join(map(str, self.calls)) + ')', 
+                                         '('+', '.join(map(str, self.outputs)) + ')', 
+                                         )
         
     def __repr__(self):
-        return 'Function(%s, %s, %s)' % (repr(self.inputs), repr(self.calls), repr(self.outputs))
+        return str(self)
+#         return 'Function(%s, %s, %s)' % (repr(self.inputs), repr(self.calls), repr(self.outputs))
     
     @classmethod
     def from_expression(cls, expr):

@@ -1,5 +1,14 @@
-from numpy import equal, where, isnan, maximum, minimum, exp, logical_not, logical_and, logical_or, select, less_equal, greater_equal, less, greater, nan, inf, log
+from numpy import array, argmax, bincount, equal, where, isnan, maximum, minimum, exp, logical_not, logical_and, logical_or, select, less_equal, greater_equal, less, greater, nan, inf, log
 from scipy.special import expit
+
+def weighted_mode(*args):
+    data, weights = zip(args)
+    data = array(data)
+    weights = array(weights)
+    return apply_along_axis(lambda x: argmax(
+                     bincount(x, weights=weights)),
+                     axis=1, arr=data)
+
 %for function in functions:
 def ${namer(function)}(${', '.join(map(str, function.inputs))}):
 %for assignments, (called_function, arguments) in function.calls:

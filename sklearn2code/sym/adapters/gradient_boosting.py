@@ -1,29 +1,30 @@
-from sympy.core.numbers import RealNumber, Zero, One
 from sklearn.ensemble.gradient_boosting import BinomialDeviance,\
     LogOddsEstimator, GradientBoostingClassifier, QuantileEstimator,\
     LossFunction, MeanEstimator, ZeroEstimator, GradientBoostingRegressor,\
     BaseGradientBoosting, PriorProbabilityEstimator, ClassificationLossFunction
 from operator import add
-from sympy.core.symbol import Symbol
-from sympy.functions.elementary.piecewise import Piecewise
 from distutils.version import LooseVersion
 import sklearn
 from six.moves import reduce
-from ..sympy_special_values import Expit
 from ..base import sym_predict,\
     sym_decision_function, sym_score_to_proba,\
     input_size_from_n_features,\
     input_size_from_n_features_, sym_score_to_decision
 from ..function import Function
-from ..base import VariableFactory, syms, sym_predict_proba, input_size
-from ..function import cart
+from ..base import syms, sym_predict_proba, input_size
+from ..function import cart, VariableFactory
+from ..expression import RealNumber, RealVariable, Piecewise,\
+    Expit
 
 @sym_decision_function.register(BaseGradientBoosting)
 def sym_decision_function_base_gradient_boosting(estimator):
     learning_rate = RealNumber(estimator.learning_rate)
     n_classes = estimator.estimators_.shape[1]
     trees = [list(map(sym_predict, estimator.estimators_[:,i])) for i in range(n_classes)]
-    tree_part = cart(*(learning_rate * reduce(add, trees[i]) for i in range(n_classes)))
+    try:
+        tree_part = cart(*(learning_rate * reduce(add, trees[i]) for i in range(n_classes)))
+    except:
+        tree_part = cart(*(learning_rate * reduce(add, trees[i]) for i in range(n_classes)))
     init_part = sym_predict(estimator.init_).append_inputs(tree_part.inputs)
     return tree_part + init_part
     
@@ -57,17 +58,17 @@ def sym_predict_mean_estimator(estimator):
 
 @sym_predict.register(ZeroEstimator)
 def sym_predict_zero_estimator(estimator):
-    return Function(tuple(), tuple(), (Zero(),))
+    return Function(tuple(), tuple(), (RealNumber(0),))
 
 @syms.register(LossFunction)
 def syms_loss_function(loss):
-    return (Symbol('x'),)
+    return (RealVariable('x'),)
 
 @sym_score_to_proba.register(BinomialDeviance)
 def sym_score_to_proba_binomial_deviance(loss):
     inputs = syms(loss)
     calls = tuple()
-    outputs = (1 - Expit(inputs[0]), Expit(inputs[0]))
+    outputs = (RealNumber(1) - Expit(inputs[0]), Expit(inputs[0]))
     return Function(inputs, calls, outputs)
 
 @sym_score_to_decision.register(ClassificationLossFunction)
@@ -77,6 +78,6 @@ def sym_score_to_decision_binomial_deviance(loss):
     compl_proba, proba = (Var(), Var())
     inputs = (compl_proba, proba)
     calls = tuple()
-    outputs = (Piecewise((One(), proba > compl_proba), (Zero(), True)),)
+    outputs = (Piecewise((RealNumber(1), proba > compl_proba), (RealNumber(0), True)),)
     return Function(inputs, calls, outputs).compose(score_to_proba)
 

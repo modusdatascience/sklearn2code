@@ -56,6 +56,9 @@ class S2CNumpyPrinter(NumPyPrinter):
     
     def _print_NAN(self, expr):
         return 'nan'
+    
+    def _print_WeightedMode(self, expr):
+        return 'weighted_mode(' + ','.join(self._print(i) for i in expr.args) + ')'
 
 class S2CPandasPrinter(S2CNumpyPrinter):
     def _print_Symbol(self, expr):

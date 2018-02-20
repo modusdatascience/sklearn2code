@@ -6,11 +6,12 @@ from six import PY2
 from pandas import DataFrame
 from sklearn2code.languages import numpy_flat, pandas
 from sklearn2code.sklearn2code import sklearn2code
-from sklearn2code.utilty import exec_module
+from sklearn2code.utility import exec_module
 from sklearn.linear_model.logistic import LogisticRegression
 from sklearn.isotonic import IsotonicRegression
 from pyearth.earth import Earth
 from sklearn.pipeline import Pipeline, FeatureUnion
+from sklearn.ensemble.voting_classifier import VotingClassifier
 if PY2:
     from types import MethodType
     
@@ -36,14 +37,27 @@ def create_regression_problem_1(m=1000, n=10):
     y = np.random.normal(np.dot(X, beta))
     return (dict(X=X, y=y), dict(X=X), dict(X=X))
 
+def create_regression_problem_with_missingness_1(m=1000, n=10):
+    np.random.seed(1)
+    X = np.random.normal(size=(m,n))
+    beta = np.random.normal(size=n)
+    y = np.random.normal(np.dot(X, beta))
+    missing = np.random.binomial(1, .1, size=X.shape)
+    X[missing] = np.nan
+    X = DataFrame(X, columns=['x%d' % i for i in range(n)])
+    return (dict(X=X, y=y), dict(X=X), dict(X=X))
+
 test_cases = [
-              (GradientBoostingClassifier(max_depth=10, n_estimators=10), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
-              (LogisticRegression(), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
-              (IsotonicRegression(out_of_bounds='clip'), ['predict'], create_isotonic_regression_problem_1()),
-              (Earth(), ['predict', 'transform'], create_regression_problem_1()),
-              (Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]), ['predict', 'predict_proba'], create_weird_classification_problem_1()),
-              (FeatureUnion([('earth', Earth()), ('earth2', Earth(max_degree=2))], transformer_weights={'earth':1, 'earth2':2}),
-               ['transform'], create_weird_classification_problem_1())
+#               (VotingClassifier([('logistic', LogisticRegression()), ('earth', Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]))]), 
+#                ['predict'], create_weird_classification_problem_1()),
+            (GradientBoostingClassifier(max_depth=10, n_estimators=10), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
+            (LogisticRegression(), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
+            (IsotonicRegression(out_of_bounds='clip'), ['predict'], create_isotonic_regression_problem_1()),
+            (Earth(), ['predict', 'transform'], create_regression_problem_1()),
+            (Earth(allow_missing=True), ['predict', 'transform'], create_regression_problem_with_missingness_1()),
+            (Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]), ['predict', 'predict_proba'], create_weird_classification_problem_1()),
+            (FeatureUnion([('earth', Earth()), ('earth2', Earth(max_degree=2))], transformer_weights={'earth':1, 'earth2':2}),
+            ['transform'], create_weird_classification_problem_1())
               ]
 
 # Create tests for numpy_flat language

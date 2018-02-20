@@ -3,7 +3,7 @@ from pyearth.earth import Earth
 from pandas import DataFrame
 from sklearn2code.sklearn2code import sklearn2code
 from sklearn2code.languages import numpy_flat
-from sklearn2code.utilty import exec_module
+from sklearn2code.utility import exec_module
 from numpy.testing.utils import assert_array_almost_equal
 from yapf.yapflib.yapf_api import FormatCode
 

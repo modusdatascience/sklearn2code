@@ -1,9 +1,9 @@
-from sympy.core.numbers import RealNumber
 from ..base import syms
 import numpy as np
 from sklearn.linear_model.base import LinearRegression
 from ..base import sym_predict
 from ..function import Function
+from ..expression import RealNumber
 
 @sym_predict.register(LinearRegression)
 def sym_predict_linear(estimator):

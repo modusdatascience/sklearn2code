@@ -4,6 +4,6 @@ NAN = Function('NAN')
 Missing = Function('Missing')
 NaNProtect = Function('NaNProtect')
 Expit = Function('Expit')
-
+WeightedMode = Function('WeightedMode')
 
 

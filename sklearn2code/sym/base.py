@@ -1,39 +1,9 @@
-from sympy.core.symbol import Symbol
 from sklearn.base import ClassifierMixin
 import re
-from sympy.core.numbers import One, Zero
-from sympy.functions.elementary.piecewise import Piecewise
 from ..dispatching import fallback, call_method_or_dispatch
-
-def safe_symbol(s):
-    if isinstance(s, Symbol):
-        return s
-    return Symbol(s)
-
-class VariableFactory(object):
-    def __init__(self, base='x', existing=[]):
-        self.base = base
-        self.existing = set(map(safe_symbol, existing))
-        self.current_n = self._get_current_n()
-        
-    
-    def _get_current_n(self):
-        regex = re.compile('%s(\d+)' % self.base)
-        result = -1
-        for sym in self.existing:
-            match = regex.match(sym.name)
-            if match:
-                val = int(match.group(1))
-                if val > result:
-                    result = val
-        result += 1
-        return result
-    
-    def __call__(self):
-        result = self.base + str(self.current_n)
-        self.current_n += 1
-        return Symbol(result)
-
+from .expression import RealVariable, Piecewise, RealNumber
+from sklearn2code.sym.expression import true, Variable
+from sklearn2code.sym.function import Function
 
 sym_decision_function_doc = '''
 Parameters
@@ -132,7 +102,9 @@ NotImplementedError
 sym_predict = call_method_or_dispatch('sym_predict', docstring=sym_predict_doc)
 @sym_predict.register(ClassifierMixin)
 def sym_predict_classifier(estimator):
-    return sym_predict_proba(estimator).select_outputs(1).apply(lambda x: Piecewise((x >= .5, One()), Zero()))
+    x = RealVariable('x')
+    return Function.from_expression(Piecewise((RealNumber(1), x >= RealNumber(.5)), (RealNumber(0), true))).compose(sym_predict_proba(estimator).select_outputs(1))
+# sym_predict_proba(estimator).select_outputs(1).apply(lambda x: Piecewise((RealNumber(1), x >= RealNumber(.5)), (RealNumber(0), true)))
 
 sym_score_to_decision_doc = '''
 Parameters
@@ -207,10 +179,10 @@ NotImplementedError
     When the estimator's type is not supported.
 '''
 def syms_x(estimator):
-    return tuple(Symbol('x%d' % d) for d in range(input_size(estimator)))
+    return tuple(RealVariable('x%d' % d) for d in range(input_size(estimator)))
 
 def syms_xlabels(estimator):
-    return tuple(map(Symbol, estimator.xlabels_))
+    return tuple(map(RealVariable, estimator.xlabels_))
 
 def syms_empty(estimator):
     return tuple()
