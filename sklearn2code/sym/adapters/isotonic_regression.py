@@ -1,9 +1,8 @@
 from sklearn.isotonic import IsotonicRegression
 import numpy as np
-from ..sympy_special_values import NAN
 from ..base import syms, sym_predict
 from ..function import Function
-from ..expression import RealVariable, RealNumber, Piecewise
+from ..expression import RealVariable, RealNumber, Piecewise, nan
 
 @syms.register(IsotonicRegression)
 def syms_isotonic_regression(estimator):
@@ -27,7 +26,7 @@ def sym_predict_isotonic_regression(estimator):
     if estimator.out_of_bounds == 'clip':
         pieces.append((y_upper, variable < x_upper))
     elif estimator.out_of_bounds == 'nan':
-        pieces.append((NAN(1), variable < RealNumber(x_upper)))
+        pieces.append((nan, variable < RealNumber(x_upper)))
     else:
         raise ValueError('out_of_bounds=%s not supported.' % estimator.out_of_bounds)
     
@@ -42,7 +41,7 @@ def sym_predict_isotonic_regression(estimator):
     if estimator.out_of_bounds == 'clip':
         pieces.append((y_upper, variable >= x_upper))
     elif estimator.out_of_bounds == 'nan':
-        pieces.append((NAN(1), variable >= x_upper))
+        pieces.append((nan, variable >= x_upper))
     else:
         raise ValueError('out_of_bounds=%s not supported.' % estimator.out_of_bounds)
     

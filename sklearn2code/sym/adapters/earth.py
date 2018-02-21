@@ -2,9 +2,8 @@ from pyearth.earth import Earth
 from ..base import syms
 from ..function import Function, tupify
 from ..base import sym_predict, sym_transform, input_size
-from toolz.functoolz import identity
 from ..expression import RealVariable as Symbol, Sum as Add, Product as Mul, Max, RealNumber, \
-        Piecewise, Power as Pow, And, nan, Not, IsNan
+        Piecewise, Power as Pow, And, Not, IsNan
 from pyearth._basis import LinearBasisFunction, HingeBasisFunction, SmoothedHingeBasisFunction, \
           MissingnessBasisFunction, ConstantBasisFunction, VariableBasisFunction
 from sklearn2code.sym.expression import Integer, BooleanExpression, BoolToReal,\
@@ -12,7 +11,7 @@ from sklearn2code.sym.expression import Integer, BooleanExpression, BoolToReal,\
 from operator import __add__
 from six.moves import reduce
 
-def export_sympy_term_expressions(earth_model):
+def export_term_expressions(earth_model):
     """
     Construct a list of expressions for all non-pruned terms in the model.
 
@@ -147,17 +146,17 @@ def export_sympy_term_expressions(earth_model):
     return [bf_to_term(bf, get_missables(bf)) for bf in earth_model.basis_.piter()]
 
 
-def export_sympy(earth_model, columns=None):
+def export(earth_model, columns=None):
     """
-    Constructs a sympy expression or list of sympy expressions from of a trained earth model.
+    Constructs an expression or list of expressions from of a trained earth model.
 
     :param earth_model: Trained pyearth model
     :param columns: The index or indices of the output columns for which expressions are to
-      be constructed.  If an integer is used, a sympy expression is returned.  If indices
-      are given then a list of sympy expressions is returned.  If columns is None, it is treated
+      be constructed.  If an integer is used, an expression is returned.  If indices
+      are given then a list of expressions is returned.  If columns is None, it is treated
       as if columns=0 for models with only one output column or as columns=slice(None) for more than
       one output column.
-    :return: a sympy expression or list of sympy expressions equivalent to the Earth.predict method for
+    :return: an expression or list of expressions equivalent to the Earth.predict method for
       the selected output columns.
 
     """
@@ -169,7 +168,7 @@ def export_sympy(earth_model, columns=None):
             columns = slice(None)
 
     # Get basis function terms
-    terms = export_sympy_term_expressions(earth_model)
+    terms = export_term_expressions(earth_model)
 
     # Handle column choice
     coefs = earth_model.coef_[columns]
@@ -201,12 +200,12 @@ def syms_earth(estimator):
 def sym_transform_earth(estimator):
     inputs = syms(estimator)
     calls = tuple()
-    outputs = tuple(export_sympy_term_expressions(estimator))
+    outputs = tuple(export_term_expressions(estimator))
     return Function(inputs, calls, outputs)
 
 @sym_predict.register(Earth)
 def sym_predict_earth(estimator):
     inputs = syms(estimator)
     calls = tuple()
-    outputs = tupify(export_sympy(estimator))
+    outputs = tupify(export(estimator))
     return Function(inputs, calls, outputs)
