@@ -23,7 +23,7 @@ def test_numpy_printer():
     y = RealVariable('y')
     numpy_print = NumpyPrinter()
     expr = Piecewise((-Log(x), x > y), (y, true))
-    assert_equal(numpy_print(expr), 'select([greater(x, y), True], [-log(x), y], default=nan)')
+    assert_equal(numpy_print(expr), 'select([greater(x, y), True], [-log(x), y], default=nan).astype(float)')
 
 if __name__ == '__main__':
     # This code will run the test in this file.'

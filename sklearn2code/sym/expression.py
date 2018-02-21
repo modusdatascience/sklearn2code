@@ -1,4 +1,4 @@
-from toolz.functoolz import flip, compose
+from toolz.functoolz import flip, compose, curry
 from functools import singledispatch
 from sklearn2code.utility import tupfun
 from operator import methodcaller, __or__
@@ -6,6 +6,9 @@ from multipledispatch.dispatcher import Dispatcher
 from six.moves import reduce
 from six import with_metaclass
 from abc import ABCMeta, abstractmethod
+from frozendict import frozendict
+from toolz.curried import itemmap
+from itertools import chain
 
 def undefined(*args):
     raise NotImplementedError()
@@ -15,6 +18,15 @@ def dispatch(name):
     result.__name__ = name
     return result
 
+def get_common_type(types):
+    common_type = None
+    for t in types:
+        if common_type is None:
+            common_type = t
+        while not issubclass(t, common_type):
+            common_type = common_type.__mro__[1]
+    return common_type
+       
 class Equaler(object):
     def __init__(self, x):
         self.x = x
@@ -174,7 +186,10 @@ class RealNumberExpression(NumberExpression):
 
 class IntegerExpression(NumberExpression):
     pass
-    
+
+class StringExpression(Expression):
+    pass
+
 class RealPiecewise(RealNumberExpression, PiecewiseBase):
     outtype = RealNumberExpression
 
@@ -299,7 +314,7 @@ class RealNumber(RealNumberExpression, Value):
         if not float(value) == value:
             raise TypeError('Real value must be float.')
         self.value = float(value)
-    
+
 class Nan(RealNumberExpression, Constant):
     def __str__(self):
         return 'Nan'
@@ -309,6 +324,15 @@ nan = Nan()
 class IsNan(BooleanExpression, UnaryFunction, FunctionOfReals):
     def __str__(self):
         return 'IsNan(%s)' % str(self.arg)
+
+class StringVariable(StringExpression, Variable):
+    pass
+
+class String(StringExpression, Value):
+    def __init__(self, value):
+        if not str(value) == value:
+            raise TypeError('String value must be str.')
+        self.value = str(value)
 
 class IntegerVariable(IntegerExpression, Variable):
     pass
@@ -562,56 +586,107 @@ Less.register(RealNumberExpression)(LessReal)
 Less.register(IntegerExpression)(LessInt)
 Less.register(BooleanExpression)(LessBool)
 
-class Map(UnaryFunction):
-    pass
+class FiniteMap(UnaryFunction):
+    @curry
+    def __init__(self, mapping, arg):
+        self.mapping = frozendict(mapping)
+        if not all(map(flip(isinstance)(Constant), chain(mapping.keys(), mapping.values()))):
+            raise TypeError('Keys and values of FiniteMap must be Constants. Got %s.' % str(tuple(map(type, chain(mapping.keys(), mapping.values())))))
+        self.arg = arg
+        self.outtype = get_common_type(map(type, self.mapping.values()))
+    
+    @property
+    def free_symbols(self):
+        return reduce(__or__,
+                      map(compose(curry(reduce)(__or__), 
+                                    tupfun(flip(getattr)('free_symbols'), flip(getattr)('free_symbols'))), 
+                            self.mapping.items())) | self.arg.free_symbols
+    
+    def subs(self, varmap):
+        return self.__class__(mapping = itemmap(tupfun(methodcaller('subs', varmap=varmap), 
+                                                       methodcaller('subs', varmap=varmap)), 
+                                                self.mapping),
+                              arg = self.arg.subs(varmap))
+    
+    def str(self):
+        return 'Map(data={%s}, arg=%s)' % (', '.join(map(lambda x: str(x[0]) + ': ' + str(x[0]), 
+                                                         self.mapping.items)), self.arg)
 
 class Statistic(Expression):
     def __init__(self, data):
         self.data = tuple(data)
+        self.outtype = get_common_type(map(type, data))
+    
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return self.__class__ is other.__class__ and self.data == other.data
+    
+    def __hash__(self):
+        return hash((self.__class__, self.data))
     
     @property
     def free_symbols(self):
         return reduce(__or__, map(flip(getattr('free_symbols')), self.data), set())
         
-    def subs(self):
-        return reduce(__or__, map(methodcaller('subs'), self.data), set())
+    def subs(self, varmap):
+        return self.__class__(tuple(map(methodcaller('subs', varmap=varmap), self.data)))
     
     def str(self):
         return '%s(data=(%s,))' % (self.__class__.__name__, 
                                                   ', '.join(map(str, self.data)))
 
-class StatisticOfReals(Statistic):
-    def __init__(self, data):
-        if not all(map(flip(isinstance)(RealNumberExpression), data)):
-            raise TypeError('Elements of data should be of type RealNumberExpression. Got (%s)' % str(tuple(map(lambda x: x.__class__.__name__, data))))
-        super(StatisticOfReals, self).__init__(data)
+# class StatisticOfReals(Statistic):
+#     def __init__(self, data):
+#         if not all(map(flip(isinstance)(RealNumberExpression), data)):
+#             raise TypeError('Elements of data should be of type RealNumberExpression. Got (%s)' % str(tuple(map(lambda x: x.__class__.__name__, data))))
+#         super(StatisticOfReals, self).__init__(data)
+        
         
 class WeightedStatistic(Statistic):
     def __init__(self, data, weights):
         super(WeightedStatistic, self).__init__(data)
         self.weights = tuple(weights)
     
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return self.__class__ is other.__class__ and self.data == other.data and self.weights == other.weights
+    
+    def __hash__(self):
+        return hash((self.__class__, self.data, self.weights))
+    
     @property
     def free_symbols(self):
         return reduce(__or__, map(flip(getattr('free_symbols')), self.weights), set()) | super(WeightedStatistic, self).free_symbols
     
-    def subs(self):
-        return (reduce(__or__, map(methodcaller('subs'), self.weights), set()) | 
-                super(WeightedStatistic, self).subs(self))
+    def subs(self, varmap):
+        return self.__class__(
+                              data = tuple(map(methodcaller('subs', varmap=varmap), self.data)),
+                              weights = tuple(map(methodcaller('subs', varmap=varmap), self.weights)),
+                              )
         
     def str(self):
         return '%s(data=(%s,), weights=(%s,))' % (self.__class__.__name__, 
                                                   ', '.join(map(str, self.data)),
                                                   ', '.join(map(str, self.weights)))
         
-class WeightedModeBase(WeightedStatistic):
+class WeightedMode(WeightedStatistic):
     pass
 
-class RealWeightedMode(RealNumberExpression, WeightedStatistic, StatisticOfReals):
-    pass
 
-class IntWeightedMode(RealNumberExpression, WeightedStatistic, StatisticOfReals):
-    pass
 
-WeightedMode = Dispatcher('WeightedMode')
+
+
+def as_value(obj):
+    if isinstance(obj, str):
+        return String(obj)
+    elif isinstance(obj, float):
+        return RealNumber(obj)
+    elif isinstance(obj, bool):
+        return Boolean(obj)
+    elif isinstance(obj, int):
+        return Integer(obj)
+    else:
+        raise ValueError('Conversion failed for object %s of type %s.' % (repr(obj), type(obj).__name__))
 

@@ -2,11 +2,11 @@ from sklearn2code.sym.expression import RealNumber, Log,\
     PiecewiseBase, NegateBase, MaxBase,\
     MinBase, GreaterBase, GreaterEqualBase, LessEqualBase, LessBase, Nan, IsNan,\
     ProductBase, SumBase, QuotientBase, DifferenceBase, Value, Expit, And, Or,\
-    Variable, BoolToReal, Not
+    Variable, BoolToReal, Not, FiniteMap, WeightedMode, RealPiecewise,\
+    IntegerPiecewise, BoolPiecewise
 from six import with_metaclass
-from multipledispatch.dispatcher import Dispatcher
 from toolz.functoolz import curry
-from sklearn2code.sym.sympy_special_values import WeightedMode
+from generic.core import Generic
 
 @curry
 def reduction(function_name, self, args):
@@ -28,7 +28,7 @@ class InnerDispatcher(object):
 
 class HeritableDispatcher(object):
     def __init__(self, name):
-        self.dispatcher = Dispatcher(name)
+        self.dispatcher = Generic(name)
         
     def register(self, *types):
         def _register(fun):
@@ -110,12 +110,18 @@ class NumpyPrinter(BasicOperatorPrinter):
     
     @ExpressionPrinter.__call__.register(WeightedMode)
     def numpy_print_weighted_mode(self, expr):
-        return ('apply_along_axis(compose(argmax, partial(bincount, weights=array([%s]))), axis=1, arr=array([%s]))'
+        return ('apply_along_axis(compose(argmax, partial(bincount, weights=array([%s]))), axis=1, arr=array([%s]).astype(int).T)'
                 % 
                 (
-                 ', '.join(map(self, expr.data)),
                  ', '.join(map(self, expr.weights)),
+                 ', '.join(map(self, expr.data)),
                  ))
+    
+    @ExpressionPrinter.__call__.register(FiniteMap)
+    def numpy_print_finite_map(self, expr):
+        return 'vectorize({%s}.get)(%s)' % (', '.join(map(lambda x: '%s: %s' 
+                                                          % (self(x[0]), self(x[1])), expr.mapping.items())),
+                                            self(expr.arg))
     
     @ExpressionPrinter.__call__.register(NegateBase)
     def numpy_print_negate(self, expr):
@@ -153,12 +159,26 @@ class NumpyPrinter(BasicOperatorPrinter):
     def numpy_print_less_equal(self, expr):
         return 'less_equal(%s, %s)' % (self(expr.lhs), self(expr.rhs))
     
-    @ExpressionPrinter.__call__.register(PiecewiseBase)
-    def numpy_print_piecewise(self, expr):
+    @ExpressionPrinter.__call__.register(RealPiecewise)
+    def numpy_print_real_piecewise(self, expr):
         vals, conds = zip(*expr.pairs)
         vals = '[{0}]'.format(', '.join(self(val) for val in vals))
         conds = '[{0}]'.format(', '.join(self(cond) for cond in conds))
-        return 'select({0}, {1}, default=nan)'.format(conds, vals)
+        return 'select({0}, {1}, default=nan).astype(float)'.format(conds, vals)
+    
+    @ExpressionPrinter.__call__.register(IntegerPiecewise)
+    def numpy_print_integer_piecewise(self, expr):
+        vals, conds = zip(*expr.pairs)
+        vals = '[{0}]'.format(', '.join(self(val) for val in vals))
+        conds = '[{0}]'.format(', '.join(self(cond) for cond in conds))
+        return 'select({0}, {1}, default=nan).astype(int)'.format(conds, vals)
+    
+    @ExpressionPrinter.__call__.register(BoolPiecewise)
+    def numpy_print_bool_piecewise(self, expr):
+        vals, conds = zip(*expr.pairs)
+        vals = '[{0}]'.format(', '.join(self(val) for val in vals))
+        conds = '[{0}]'.format(', '.join(self(cond) for cond in conds))
+        return 'select({0}, {1}, default=nan).astype(bool)'.format(conds, vals)
     
     @ExpressionPrinter.__call__.register(Nan)
     def numpy_print_nan(self, expr):

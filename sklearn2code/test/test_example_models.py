@@ -48,8 +48,8 @@ def create_regression_problem_with_missingness_1(m=1000, n=10):
     return (dict(X=X, y=y), dict(X=X), dict(X=X))
 
 test_cases = [
-#               (VotingClassifier([('logistic', LogisticRegression()), ('earth', Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]))]), 
-#                ['predict'], create_weird_classification_problem_1()),
+            (VotingClassifier([('logistic', LogisticRegression()), ('earth', Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]))]), 
+             ['predict'], create_weird_classification_problem_1()),
             (GradientBoostingClassifier(max_depth=10, n_estimators=10), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
             (LogisticRegression(), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
             (IsotonicRegression(out_of_bounds='clip'), ['predict'], create_isotonic_regression_problem_1()),

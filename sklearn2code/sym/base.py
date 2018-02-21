@@ -2,7 +2,7 @@ from sklearn.base import ClassifierMixin
 import re
 from ..dispatching import fallback, call_method_or_dispatch
 from .expression import RealVariable, Piecewise, RealNumber
-from sklearn2code.sym.expression import true, Variable
+from sklearn2code.sym.expression import true, Variable, Integer
 from sklearn2code.sym.function import Function
 
 sym_decision_function_doc = '''
@@ -100,10 +100,6 @@ NotImplementedError
 
 '''
 sym_predict = call_method_or_dispatch('sym_predict', docstring=sym_predict_doc)
-@sym_predict.register(ClassifierMixin)
-def sym_predict_classifier(estimator):
-    x = RealVariable('x')
-    return Function.from_expression(Piecewise((RealNumber(1), x >= RealNumber(.5)), (RealNumber(0), true))).compose(sym_predict_proba(estimator).select_outputs(1))
 # sym_predict_proba(estimator).select_outputs(1).apply(lambda x: Piecewise((RealNumber(1), x >= RealNumber(.5)), (RealNumber(0), true)))
 
 sym_score_to_decision_doc = '''
@@ -159,6 +155,26 @@ NotImplementedError
     When the estimator's type is not supported.
 '''
 sym_transform = call_method_or_dispatch('sym_transform', docstring=sym_transform_doc)
+
+
+sym_inverse_transform_doc = '''
+estimator : A scikit-learn or other compatible fitted classifier.
+
+Returns
+-------
+Function
+    A Function object specifying the inverse_transform function for estimator.
+
+Raises
+------
+NotFittedError
+    When the estimator is not fitted.
+
+NotImplementedError
+    When the estimator's type is not supported.
+'''
+sym_inverse_transform = call_method_or_dispatch('sym_inverse_transform', docstring=sym_inverse_transform_doc)
+
 
 syms_doc = '''
 Parameters
