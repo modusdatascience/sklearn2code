@@ -6,7 +6,7 @@ from sklearn2code.sym.expression import RealNumber, Log,\
     IntegerPiecewise, BoolPiecewise
 from six import with_metaclass
 from toolz.functoolz import curry
-from generic.core import Generic
+from multipledispatch.dispatcher import Dispatcher
 
 @curry
 def reduction(function_name, self, args):
@@ -28,7 +28,7 @@ class InnerDispatcher(object):
 
 class HeritableDispatcher(object):
     def __init__(self, name):
-        self.dispatcher = Generic(name)
+        self.dispatcher = Dispatcher(name)
         
     def register(self, *types):
         def _register(fun):

@@ -26,7 +26,7 @@ class Language(object):
         ----------
         
         printer : callable
-            A callable that takes a sympy expression and returns a string.
+            A callable that takes an expression and returns a string.
             
         template : Template
             A mako Template that takes an iterable of Functions, a printer, 
