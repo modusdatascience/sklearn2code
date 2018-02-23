@@ -1,6 +1,9 @@
-from numpy import equal, where, isnan, maximum, minimum, exp, logical_not, logical_and, logical_or, select, less_equal, greater_equal, less, greater, nan, inf, log, asarray
+from numpy import vectorize, array, bincount, argmax, apply_along_axis, equal, where, isnan, maximum, minimum, exp, logical_not, logical_and, logical_or, select, less_equal, greater_equal, less, greater, nan, inf, log, asarray
 from scipy.special import expit
 from pandas import DataFrame
+from toolz import compose
+from functools import partial
+
 <%!
 from toolz import flip
 %>

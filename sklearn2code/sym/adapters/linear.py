@@ -1,9 +1,9 @@
-from sympy.core.numbers import RealNumber
 from ..base import syms
 import numpy as np
 from sklearn.linear_model.base import LinearModel
 from ..base import sym_predict
 from ..function import Function
+from ..expression import RealNumber
 from sklearn.linear_model.stochastic_gradient import BaseSGDRegressor
 
 @sym_predict.register(LinearModel)

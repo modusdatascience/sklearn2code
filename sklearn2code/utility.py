@@ -1,6 +1,33 @@
 import imp
-from six import exec_
+from six import exec_, string_types
 import numpy as np
+from toolz.functoolz import curry
+
+@curry
+def tupsmap(n, fun, tups):
+    return tuple([tup[:n] + (fun(tup[n]),) + tup[(n+1):] for tup in tups])
+
+@curry
+def tupapply(tup):
+    return tup[0](*tup[1:])
+
+def tupfun(*funs):
+    def _tupfun(tup):
+        return tuple(map(tupapply, zip(funs, tup)))
+    return _tupfun
+
+@curry
+def tupget(n, tup):
+    return tup[n]
+
+def isiterable(obj):
+    return hasattr(obj, '__iter__')
+
+def tupify(obj):
+    if isiterable(obj) and not isinstance(obj, string_types):
+        return tuple(obj)
+    else:
+        return (obj,)
 
 def exec_module(name, code):
     module = imp.new_module(name)
