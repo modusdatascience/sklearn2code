@@ -1,4 +1,4 @@
-from .linear_regression import sym_predict_linear
+from sklearn2code.sym.adapters.linear import sym_predict_linear
 from sklearn.linear_model.logistic import LogisticRegression
 from ..function import Function, VariableFactory
 from ..base import sym_predict_proba, input_size_from_coef, input_size

@@ -79,6 +79,8 @@ NotImplementedError
 
 '''
 input_size = call_method_or_dispatch('input_size', docstring=input_size_doc)
+input_size.register(object, fallback(input_size_from_n_features_, input_size_from_n_features, input_size_from_coef, 
+                                     exception_type=AttributeError))
 
 sym_predict_doc = '''
 Parameters
