@@ -116,6 +116,9 @@ class NumpyPrinter(BasicOperatorPrinter):
                  ', '.join(map(self, expr.weights)),
                  ', '.join(map(self, expr.data)),
                  ))
+    @ExpressionPrinter.__call__.register(WeightedMedian)    
+    def numpy_print_weighted_median(self, expr):
+        pass
     
     @ExpressionPrinter.__call__.register(FiniteMap)
     def numpy_print_finite_map(self, expr):

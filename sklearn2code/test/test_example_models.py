@@ -53,23 +53,23 @@ def create_regression_problem_with_missingness_1(m=1000, n=10):
     return (dict(X=X, y=y), dict(X=X), dict(X=X))
 
 test_cases = [
-            (VotingClassifier([('logistic', LogisticRegression()), ('earth', Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]))]), 
-             ['predict'], create_weird_classification_problem_1()),
+#             (VotingClassifier([('logistic', LogisticRegression()), ('earth', Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]))]), 
+#              ['predict'], create_weird_classification_problem_1()),
             (GradientBoostingClassifier(max_depth=10, n_estimators=10), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
-            (LogisticRegression(), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
-            (IsotonicRegression(out_of_bounds='clip'), ['predict'], create_isotonic_regression_problem_1()),
-            (Earth(), ['predict', 'transform'], create_regression_problem_1()),
-            (Earth(allow_missing=True), ['predict', 'transform'], create_regression_problem_with_missingness_1()),
-            (ElasticNet(), ['predict'], create_regression_problem_1()),
-            (ElasticNetCV(), ['predict'], create_regression_problem_1()),
-            (LassoCV(), ['predict'], create_regression_problem_1()),
-            (Ridge(), ['predict'], create_regression_problem_1()), 
-            (RidgeCV(), ['predict'], create_regression_problem_1()), 
-            (SGDRegressor(), ['predict'], create_regression_problem_1()),
-            (Lasso(), ['predict'], create_regression_problem_1()),
-            (Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]), ['predict', 'predict_proba'], create_weird_classification_problem_1()),
-            (FeatureUnion([('earth', Earth()), ('earth2', Earth(max_degree=2))], transformer_weights={'earth':1, 'earth2':2}),
-            ['transform'], create_weird_classification_problem_1())
+#             (LogisticRegression(), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
+#             (IsotonicRegression(out_of_bounds='clip'), ['predict'], create_isotonic_regression_problem_1()),
+#             (Earth(), ['predict', 'transform'], create_regression_problem_1()),
+#             (Earth(allow_missing=True), ['predict', 'transform'], create_regression_problem_with_missingness_1()),
+#             (ElasticNet(), ['predict'], create_regression_problem_1()),
+#             (ElasticNetCV(), ['predict'], create_regression_problem_1()),
+#             (LassoCV(), ['predict'], create_regression_problem_1()),
+#             (Ridge(), ['predict'], create_regression_problem_1()), 
+#             (RidgeCV(), ['predict'], create_regression_problem_1()), 
+#             (SGDRegressor(), ['predict'], create_regression_problem_1()),
+#             (Lasso(), ['predict'], create_regression_problem_1()),
+#             (Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]), ['predict', 'predict_proba'], create_weird_classification_problem_1()),
+#             (FeatureUnion([('earth', Earth()), ('earth2', Earth(max_degree=2))], transformer_weights={'earth':1, 'earth2':2}),
+#             ['transform'], create_weird_classification_problem_1())
               ]
 
 # Create tests for numpy_flat language
