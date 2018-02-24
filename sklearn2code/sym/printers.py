@@ -3,7 +3,7 @@ from sklearn2code.sym.expression import RealNumber, Log,\
     MinBase, GreaterBase, GreaterEqualBase, LessEqualBase, LessBase, Nan, IsNan,\
     ProductBase, SumBase, QuotientBase, DifferenceBase, Value, Expit, And, Or,\
     Variable, BoolToReal, Not, FiniteMap, WeightedMode, RealPiecewise,\
-    IntegerPiecewise, BoolPiecewise
+    IntegerPiecewise, BoolPiecewise, WeightedMedian
 from six import with_metaclass
 from toolz.functoolz import curry
 from multipledispatch.dispatcher import Dispatcher

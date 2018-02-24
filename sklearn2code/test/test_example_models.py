@@ -16,6 +16,7 @@ from sklearn.linear_model.coordinate_descent import Lasso, ElasticNet,\
     ElasticNetCV, LassoCV
 from sklearn.linear_model.ridge import Ridge, RidgeCV
 from sklearn.linear_model.stochastic_gradient import SGDRegressor
+from sklearn.ensemble.weight_boosting import AdaBoostRegressor
 
 if PY2:
     from types import MethodType
@@ -55,7 +56,8 @@ def create_regression_problem_with_missingness_1(m=1000, n=10):
 test_cases = [
 #             (VotingClassifier([('logistic', LogisticRegression()), ('earth', Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]))]), 
 #              ['predict'], create_weird_classification_problem_1()),
-            (GradientBoostingClassifier(max_depth=10, n_estimators=10), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
+#             (GradientBoostingClassifier(max_depth=10, n_estimators=10), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
+            (AdaBoostRegressor(), ['predict'], create_regression_problem_1()), 
 #             (LogisticRegression(), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
 #             (IsotonicRegression(out_of_bounds='clip'), ['predict'], create_isotonic_regression_problem_1()),
 #             (Earth(), ['predict', 'transform'], create_regression_problem_1()),
