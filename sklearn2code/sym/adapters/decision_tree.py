@@ -29,4 +29,8 @@ def sym_predict_decision_tree_regressor(estimator):
         result.append(_inner_sym_predict_decision_tree_regressor(estimator, symbols, output_idx=output_idx))
     return Function(symbols, tuple(), tuple(result))
 
+
+
+
+
 input_size.register(DecisionTreeRegressor, input_size_from_n_features_)

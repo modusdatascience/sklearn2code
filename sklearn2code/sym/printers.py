@@ -118,6 +118,25 @@ class NumpyPrinter(BasicOperatorPrinter):
                  ))
     @ExpressionPrinter.__call__.register(WeightedMedian)    
     def numpy_print_weighted_median(self, expr):
+        '''
+        assuming now that this has access to the actual data; and that you can move this out to another function? 
+        Sklearn implementation 
+         # Sort the predictions
+        sorted_idx = np.argsort(predictions, axis=1)
+
+        # Find index of median prediction for each sample
+        weight_cdf = stable_cumsum(self.estimator_weights_[sorted_idx], axis=1)
+        median_or_above = weight_cdf >= 0.5 * weight_cdf[:, -1][:, np.newaxis]
+        median_idx = median_or_above.argmax(axis=1)
+
+        median_estimators = sorted_idx[np.arange(X.shape[0]), median_idx]
+
+        # Return median predictions
+        return predictions[np.arange(X.shape[0]), median_estimators]
+        
+    
+        '''
+        1 + 1
         pass
     
     @ExpressionPrinter.__call__.register(FiniteMap)

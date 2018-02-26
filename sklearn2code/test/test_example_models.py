@@ -55,7 +55,7 @@ def create_regression_problem_with_missingness_1(m=1000, n=10):
 
 test_cases = [
 #             (VotingClassifier([('logistic', LogisticRegression()), ('earth', Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]))]), 
-#              ['predict'], create_weird_classification_problem_1()),
+#             ['predict'], create_weird_classification_problem_1()),
 #             (GradientBoostingClassifier(max_depth=10, n_estimators=10), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
             (AdaBoostRegressor(), ['predict'], create_regression_problem_1()), 
 #             (LogisticRegression(), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
@@ -80,6 +80,7 @@ def create_case_numpy_flat(estimator, methods, fit_data, predict_data, export_pr
         model = clone(estimator)
         model.fit(**fit_data)
         
+
         for method in  methods:
             pred = getattr(model, method)(**predict_data)
             code = sklearn2code(model, method, numpy_flat)
