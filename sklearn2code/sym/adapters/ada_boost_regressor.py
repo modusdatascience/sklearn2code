@@ -17,7 +17,3 @@ def sym_predict_ada_boost_regressor(estimator):
     return Function(inputs=preds, calls=tuple(), outputs=sym_weighted_median(preds, weights))
     
 
-
-
-    
-    
