@@ -16,6 +16,7 @@ from sklearn.linear_model.coordinate_descent import Lasso, ElasticNet,\
     ElasticNetCV, LassoCV
 from sklearn.linear_model.ridge import Ridge, RidgeCV
 from sklearn.linear_model.stochastic_gradient import SGDRegressor
+from sklearn.ensemble.forest import RandomForestRegressor
 
 if PY2:
     from types import MethodType
@@ -69,7 +70,8 @@ test_cases = [
             (Lasso(), ['predict'], create_regression_problem_1()),
             (Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]), ['predict', 'predict_proba'], create_weird_classification_problem_1()),
             (FeatureUnion([('earth', Earth()), ('earth2', Earth(max_degree=2))], transformer_weights={'earth':1, 'earth2':2}),
-            ['transform'], create_weird_classification_problem_1())
+            ['transform'], create_weird_classification_problem_1()),
+            (RandomForestRegressor(), ['predict'], create_regression_problem_1())
               ]
 
 # Create tests for numpy_flat language
