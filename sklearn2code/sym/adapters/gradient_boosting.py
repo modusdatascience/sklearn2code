@@ -15,6 +15,7 @@ from ..base import syms, sym_predict_proba, input_size
 from ..function import cart, VariableFactory
 from ..expression import RealNumber, RealVariable, Piecewise,\
     Expit
+from sklearn2code.sym.expression import true
 
 @sym_decision_function.register(BaseGradientBoosting)
 def sym_decision_function_base_gradient_boosting(estimator):
@@ -78,6 +79,6 @@ def sym_score_to_decision_binomial_deviance(loss):
     compl_proba, proba = (Var(), Var())
     inputs = (compl_proba, proba)
     calls = tuple()
-    outputs = (Piecewise((RealNumber(1), proba > compl_proba), (RealNumber(0), True)),)
+    outputs = (Piecewise((RealNumber(1), proba > compl_proba), (RealNumber(0), true)),)
     return Function(inputs, calls, outputs).compose(score_to_proba)
 
