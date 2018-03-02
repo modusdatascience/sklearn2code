@@ -393,9 +393,17 @@ Min = dispatch('Min')
 Min.register(RealNumberExpression)(MinReal)
 Min.register(IntegerExpression)(MinInt)
 
-class SumBase(NaryFunction):
+class SumBase(NumberExpression, NaryFunction):
     def __str__(self):
         return '(%s)' % ' + '.join(map(str, self.args))
+    
+    def __add__(self, other):
+        if not isinstance(other, Expression):
+            return NotImplemented
+        if isinstance(other, self.__class__):
+            return self.__class__(*chain(self.args, other.args))
+        else:
+            return self.__class__(*self.args, other)
 
 class SumReal(RealNumberExpression, SumBase, FunctionOfReals):
     pass
@@ -407,7 +415,7 @@ Sum = dispatch('Sum')
 Sum.register(RealNumberExpression)(SumReal)
 Sum.register(IntegerExpression)(SumInt)
 
-class DifferenceBase(BinaryFunction):
+class DifferenceBase(NumberExpression, BinaryFunction):
     def __str__(self):
         return '(%s - %s)' % (self.lhs, self.rhs)
     
@@ -421,10 +429,18 @@ Difference = dispatch('Difference')
 Difference.register(RealNumberExpression)(DifferenceReal)
 Difference.register(IntegerExpression)(DifferenceInt)
 
-class ProductBase(NaryFunction):
+class ProductBase(NumberExpression, NaryFunction):
     def __str__(self):
         return '(%s)' % ' * '.join(map(str, self.args))
-
+    
+    def __mul__(self, other):
+        if not isinstance(other, Expression):
+            return NotImplemented
+        if isinstance(other, self.__class__):
+            return self.__class__(*chain(self.args, other.args))
+        else:
+            return self.__class__(*self.args, other)
+    
 class ProductReal(RealNumberExpression, ProductBase, FunctionOfReals):
     pass
 
@@ -435,7 +451,7 @@ Product = dispatch('Product')
 Product.register(RealNumberExpression)(ProductReal)
 Product.register(IntegerExpression)(ProductInt)
 
-class PowerBase(BinaryFunction):
+class PowerBase(NumberExpression, BinaryFunction):
     def __str__(self):
         return '(%s ** %s)' % (self.lhs, self.rhs)
 
@@ -453,7 +469,7 @@ Power.register(IntegerExpression, IntegerExpression)(IntPowerInt)
 Power.register(RealNumberExpression, IntegerExpression)(RealPowerInt)
 Power.register(RealNumberExpression, RealNumberExpression)(RealPowerReal)
 
-class QuotientBase(BinaryFunction):
+class QuotientBase(NumberExpression, BinaryFunction):
     def __str__(self):
         return '(%s / %s)' % (self.lhs, self.rhs)
 
