@@ -158,7 +158,7 @@ $ pip install git+https://github.com/modusdatascience/sklearn2code
   </tr>
 </table>
 
-### Output 
+### An Example and Output 
 
 ```python
 from sklearn.datasets.base import load_boston
@@ -245,6 +245,6 @@ def predict(CRIM, ZN, INDUS, CHAS, NOX, RM, AGE, DIS, RAD, TAX, PTRATIO, B,
 
 ### License ### 
 
-Sklearn2Code is under the BSD 3-Clause license. 
+Sklearn2Code is under the MIT license. 
 
 
