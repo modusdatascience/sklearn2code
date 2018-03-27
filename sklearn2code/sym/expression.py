@@ -41,6 +41,21 @@ class Equaler(object):
         return self
 
 class Expression(with_metaclass(ABCMeta, object)):
+    '''
+    Expression is an abstract base class for objects representing mathematical or 
+    computational expressions (e.g., constants, variables, sums, logarithms).  The 
+    Expression system was developed as a replacement for sympy expressions, which were
+    used in a previous version, and shares some conventions with the sympy expression
+    system.  For example, Expression objects implement the subs method for performing 
+    variable substitution and have a free_symbols property which contains the Expression's
+    free variables.
+    
+    Most operations on Expressions behave as you would expect.  For example, if `x` and `y` 
+    are both NumberExpression then `x > y` is a BooleanExpression representing the comparison. 
+    The exception to this is equality, which can't behave as expected because of compatibility 
+    with Python's dictionary key system.  To get a BooleanExpression for equality, you can 
+    write either `x.e == y` or `Equals(x, y)`.
+    '''
     def __init__(self):
         if self.__class__ is Expression:
             raise NotImplementedError('Attempt to instantiate abstract class.')
