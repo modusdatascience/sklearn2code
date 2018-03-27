@@ -10,7 +10,8 @@ from mako.template import Template
 import os
 from sklearn2code.templates import template_dir
 from networkx.classes.digraph import DiGraph
-from sklearn2code.sym.printers import NumpyPrinter, PandasPrinter
+from sklearn2code.sym.printers import NumpyPrinter, PandasPrinter,\
+    JavascriptPrinter
 from sklearn2code.utility import tupapply
 from sklearn2code.sym.function import Function, safe_symbol
 
@@ -50,5 +51,7 @@ class Language(object):
     
 numpy_flat = Language(NumpyPrinter(), Template(filename=os.path.join(template_dir, 'numpy_flat_template.mako.py')))
 pandas = Language(PandasPrinter(), Template(filename=os.path.join(template_dir, 'pandas_template.mako.py')))
+javascript = Language(JavascriptPrinter(), Template(filename=os.path.join(template_dir, 'javascript_template.mako.js')))
+
 
 

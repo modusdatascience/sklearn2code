@@ -4,7 +4,7 @@ from sklearn.base import clone
 from numpy.ma.testutils import assert_array_almost_equal
 from six import PY2
 from pandas import DataFrame
-from sklearn2code.languages import numpy_flat, pandas
+from sklearn2code.languages import numpy_flat, pandas, javascript
 from sklearn2code.sklearn2code import sklearn2code
 from sklearn2code.utility import exec_module
 from sklearn.linear_model.logistic import LogisticRegression
@@ -138,9 +138,36 @@ for i, (estimator, methods, (fit_data, predict_data, export_predict_data)) in en
         case = MethodType(case, None, TestExampleEstimatorsPandas)
     setattr(TestExampleEstimatorsPandas, case_name, case)
     del case
+    
+def create_case_javascript(estimator, methods, fit_data, predict_data, export_predict_data):
+    def test_case(self):
+        model = clone(estimator)
+        model.fit(**fit_data)
+        
+        for method in  methods:
+            code = sklearn2code(model, method, javascript)
+            print(code)
+#             pred = DataFrame(getattr(model, method)(**predict_data))
+#             module = exec_module('test_module', code)
+#             exported_pred = getattr(module, method)(export_predict_data['X'])
+#             assert_array_almost_equal(pred, exported_pred)
+    test_case.__doc__ = ('Testing javascript language exportability of method%s %s of %s' % 
+                         ('s' if len(methods)>1 else '', ', '.join(methods), repr(estimator)))
+    return test_case
 
+# All tests will be methods of this class
+class TestExampleEstimatorsJavascript(object):
+    pass
 
-
+# The following loop adds a method to TestExampleEstimators for each test case
+for i, (estimator, methods, (fit_data, predict_data, export_predict_data)) in enumerate(test_cases):
+    case = create_case_javascript(estimator, methods, fit_data, predict_data, export_predict_data)
+    case_name = 'test_case_%d' % i
+    case.__name__ = case_name
+    if PY2:
+        case = MethodType(case, None, TestExampleEstimatorsJavascript)
+    setattr(TestExampleEstimatorsJavascript, case_name, case)
+    del case
 
 if __name__ == '__main__':
     # This code will run the test in this file.'

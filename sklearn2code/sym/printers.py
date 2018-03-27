@@ -197,6 +197,35 @@ class PandasPrinter(NumpyPrinter):
     def pandas_print_variable(self, expr):
         return 'asarray(dataframe[\'' + expr.name + '\'])'
 
-
+class JavascriptPrinter(BasicOperatorPrinter):
+    @ExpressionPrinter.__call__.register(Variable)
+    def js_print_variable(self, expr):
+        return expr.name
+    
+    @ExpressionPrinter.__call__.register(MaxBase)
+    def js_print_max(self, expr):
+        return 'Math.max(' + ','.join(self(arg) for arg in expr.args) + ')'
+    
+    @ExpressionPrinter.__call__.register(MinBase)
+    def js_print_min(self, expr):
+        return 'Math.min(' + ','.join(self(arg) for arg in expr.args) + ')'
+    
+    @ExpressionPrinter.__call__.register(IsNan)
+    def js_print_is_nan(self, expr):
+        return 'isNan(' + self(expr) + ')'
+    
+    @ExpressionPrinter.__call__.register(Expit)
+    def js_print_expit(self, expr):
+        return 'expit(' + self(expr.arg) + ')'
+    
+    @ExpressionPrinter.__call__.register(Nan)
+    def js_print_nan(self, expr):
+        return 'NaN'
+    
+    @ExpressionPrinter.__call__.register(PiecewiseBase)
+    def js_print_piecewise(self, expr):
+        return (':'.join(map(lambda pair: '(%s?%s' % 
+                                  (str(pair[1]), str(pair[0])), expr.pairs)) + 
+                (')' * len(expr.pairs)))
 
 
