@@ -1,7 +1,7 @@
 from .sym.function import tupify
 
-def sklearn2code(estimator, methods, language, trim=True, **extra_args):
-    return language.generate(estimator, tupify(methods), trim=trim, **extra_args)
+def sklearn2code(estimator, methods, language, trim=True, argument_names=None, **extra_args):
+    return language.generate(estimator, tupify(methods), trim=trim, argument_names=argument_names, **extra_args)
 
 from .sym import adapters
 import importlib

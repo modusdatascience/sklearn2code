@@ -12,6 +12,7 @@ from sklearn2code.templates import template_dir
 from networkx.classes.digraph import DiGraph
 from sklearn2code.sym.printers import NumpyPrinter, PandasPrinter
 from sklearn2code.utility import tupapply
+from sklearn2code.sym.function import Function, safe_symbol
 
 method_dispatcher = dict(
                          predict = sym_predict,
@@ -35,8 +36,11 @@ class Language(object):
         self.printer = printer
         self.template = template
     
-    def generate(self, estimator, methods, trim, **extra_args):
+    def generate(self, estimator, methods, trim, argument_names, **extra_args):
         functions = tuple(map(tupapply, zip(map(method_dispatcher.__getitem__, methods), repeat(estimator))))
+        if argument_names is not None:
+            outer = Function(tuple(map(safe_symbol, argument_names)), tuple(), tuple(map(safe_symbol, argument_names)))
+            functions = tuple(map(lambda x: x.compose(outer), functions))
         g = reduce(networkx.compose, map(methodcaller('digraph'), functions), DiGraph())
         sorted_functions = tuple(networkx.topological_sort(g))
         names = dict(zip(functions, methods))
