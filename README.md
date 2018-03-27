@@ -1,7 +1,164 @@
-# A flexible, extensible framework for converting scikit-learn estimators into portable software
+# Sklearn2Code
+#### A flexible, extensible framework for converting scikit-learn models into portable software for deployment ####
 
-With `sklearn2code` you can generate source code in any language<sup>[1](#myfootnote1)</sup> from any scikit-learn estimator<sup>[2](#myfootnote2)</sup>.  
+Sklearn2Code converts most scikit-learn estimators into source code in different languages. 
+
+
+### An Example 
 Here's an example in which an `Earth` regressor is fitted to the Boston housing data set, then converted to Python code.
+```python
+from sklearn.datasets.base import load_boston
+from sklearn.ensemble import RandomForestRegressor
+from pandas import DataFrame
+from sklearn2code.sklearn2code import sklearn2code
+from sklearn2code.languages import numpy_flat
+from sklearn2code.utility import exec_module
+from numpy.testing.utils import assert_array_almost_equal
+from yapf.yapflib.yapf_api import FormatCode
+from sklearn.ensemble.forest import RandomForestRegressor
+
+# Load a data set.
+boston = load_boston()
+X = DataFrame(boston['data'], columns=boston['feature_names'])
+y = boston['target']
+
+# Fit a scikit-learn model.
+model = RandomForestRegressor().fit(X, y)
+
+# Generate code from the scikit-learn model.
+code = sklearn2code(model, ['predict'], numpy_flat)
+
+# Write the code to a file
+code_file = open("code_file.py","w")
+code_file.write(code)
+code_file.close()
+
+#import the generated code
+import code_file
+
+# Confirm that the generated module produces output identical
+# to the fitted model's predict method.
+assert_array_almost_equal(model.predict(X), 
+                          code_file.predict(**X))
+
+# Print the generated code (using yapf for formatting).
+print(FormatCode(code, style_config='pep8')[0])
+
+```
+
+### Installation
+
+``` bash
+$ pip install git+https://github.com/modusdatascience/sklearn2code
+```
+### Supported Estimators 
+
+<table class="tg">
+  <tr>
+    <th class="tg-yw4l"></th>
+    <th class="tg-yw4l">Python (Pandas)</th>
+    <th class="tg-yw4l">Python (Numpy)</th>
+    <th class="tg-yw4l">Javascript</th>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html'>VotingClassifier</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html'>GradientBoostingClassifier</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html'>LogisticRegression</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.isotonic.IsotonicRegression.html#sklearn.isotonic.IsotonicRegression'>IsotonicRegression</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='https://github.com/scikit-learn-contrib/py-earth'>PyEarth</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html'>ElasticNet</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNetCV.html'>ElasticNetCV</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html'>Lasso</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LassoCV.html'>LassoCV</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html'>Ridge</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeCV.html'>RidgeCV</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html'>SGDRegressor</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.pipeline.FeatureUnion.html'>Pipeline</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.pipeline.FeatureUnion.html'>FeatureUnion</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html'>RandomForestRegressor</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+  <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html'>CalibratedClassifierCV</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
+  </tr>
+</table>
+
+### Output 
 
 ```python
 from sklearn.datasets.base import load_boston
@@ -23,14 +180,6 @@ model = Earth(max_degree=2).fit(X, y)
 
 # Generate code from the py-earth model.
 code = sklearn2code(model, ['predict'], numpy_flat)
-
-# Execute the generated code in its own module.
-boston_housing_module = exec_module('boston_housing_module', code)
-
-# Confirm that the generated module produces output identical
-# to the fitted model's predict method.
-assert_array_almost_equal(model.predict(X), 
-                          boston_housing_module.predict(**X))
 
 # Print the generated code (using yapf for formatting).
 print(FormatCode(code, style_config='pep8')[0])
@@ -94,7 +243,8 @@ def predict(CRIM, ZN, INDUS, CHAS, NOX, RM, AGE, DIS, RAD, TAX, PTRATIO, B,
 
 ```
 
-<a name="myfootnote1">1</a>: In some cases you have to implement support for your desired language.  We try to make this as easy as possible.
-<a name="myfootnote2">2</a>: `sklearn2code` also supports some external scikit-learn compatible packages, such as [py-earth](https://github.com/scikit-learn-contrib/py-earth), and is designed to be easily extended to support other types of estimators.  
+### License ### 
+
+Sklearn2Code is under the BSD 3-Clause license. 
 
 
