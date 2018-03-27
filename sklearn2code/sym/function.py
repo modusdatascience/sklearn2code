@@ -45,6 +45,13 @@ class VariableFactory(object):
 class Function(object):
     def __init__(self, inputs, calls, outputs, origin=None):
         '''
+        A Function represents a function in the computational sense.  Function objects are the 
+        intermediary between fitted estimators and generated code.  Adapters return Function 
+        objects, and sklearn2code converts Function objects into working code.  A Function object
+        is composed of Expression objects (including Variable objects) and other Function objects.  
+        It knows its inputs (Variable objects), its internal calls (made up of Variable objects 
+        and other Function objects), and its outputs (general Expression objects).  
+        
         Parameters
         ----------
         inputs : tuple of Variables
