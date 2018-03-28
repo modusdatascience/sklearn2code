@@ -8,13 +8,6 @@ from six import with_metaclass
 from toolz.functoolz import curry
 from multipledispatch.dispatcher import Dispatcher
 
-# @curry
-# def reduction(function_name, self, args):
-#     if len(args) == 1:
-#         return self(args[0])
-#     else:
-#         return function_name + '(' + self(args[0]) + ',' + reduction(function_name, self, args[1:]) + ')'
-
 @curry
 def reduction(binary, self, args):
     if len(args) == 1:
@@ -269,9 +262,3 @@ class JavascriptPrinter(BasicOperatorPrinter):
         return (':'.join(map(lambda pair: '(%s===%s?%s' % 
                                   (arg, self(pair[1]), self(pair[0])), expr.mapping.items())) + 
                 (')' * len(expr.mapping)))
-    
-#     '{%s:}.' %
-#     % (', '.join(map(lambda x: '%s: %s' 
-#                                                           % (self(x[0]), self(x[1])), expr.mapping.items())),
-#                                             self(expr.arg))
-
