@@ -3,17 +3,24 @@ from sklearn2code.sym.expression import RealNumber, Log,\
     MinBase, GreaterBase, GreaterEqualBase, LessEqualBase, LessBase, Nan, IsNan,\
     ProductBase, SumBase, QuotientBase, DifferenceBase, Value, Expit, And, Or,\
     Variable, BoolToReal, Not, FiniteMap, WeightedMode, RealPiecewise,\
-    IntegerPiecewise, BoolPiecewise
+    IntegerPiecewise, BoolPiecewise, EqualsBase
 from six import with_metaclass
 from toolz.functoolz import curry
 from multipledispatch.dispatcher import Dispatcher
 
+# @curry
+# def reduction(function_name, self, args):
+#     if len(args) == 1:
+#         return self(args[0])
+#     else:
+#         return function_name + '(' + self(args[0]) + ',' + reduction(function_name, self, args[1:]) + ')'
+
 @curry
-def reduction(function_name, self, args):
+def reduction(binary, self, args):
     if len(args) == 1:
         return self(args[0])
     else:
-        return function_name + '(' + self(args[0]) + ',' + reduction(function_name, self, args[1:]) + ')'
+        return binary(self(args[0]), reduction(binary, self, args[1:]))
 
 class InnerDispatcher(object):
     def __init__(self, parent, instance):
@@ -94,11 +101,12 @@ class NumpyPrinter(BasicOperatorPrinter):
     
     @ExpressionPrinter.__call__.register(And)
     def numpy_print_and(self, expr):
-        return reduction('logical_and', self, expr.args)
+        return reduction(lambda x,y: 'logical_and(%s, %s)' % (x, y), self, expr.args)
     
     @ExpressionPrinter.__call__.register(Or)
     def numpy_print_or(self, expr):
-        return reduction('logical_or', self, expr.args)
+        return reduction(lambda x,y: 'logical_or(%s, %s)' % (x, y), self, expr.args)
+#         return reduction('logical_or', self, expr.args)
     
     @ExpressionPrinter.__call__.register(Not)
     def numpy_print_not(self, expr):
@@ -212,7 +220,7 @@ class JavascriptPrinter(BasicOperatorPrinter):
     
     @ExpressionPrinter.__call__.register(IsNan)
     def js_print_is_nan(self, expr):
-        return 'isNan(' + self(expr) + ')'
+        return 'isNan(' + self(expr.arg) + ')'
     
     @ExpressionPrinter.__call__.register(Expit)
     def js_print_expit(self, expr):
@@ -225,7 +233,45 @@ class JavascriptPrinter(BasicOperatorPrinter):
     @ExpressionPrinter.__call__.register(PiecewiseBase)
     def js_print_piecewise(self, expr):
         return (':'.join(map(lambda pair: '(%s?%s' % 
-                                  (str(pair[1]), str(pair[0])), expr.pairs)) + 
+                                  (self(pair[1]), self(pair[0])), expr.pairs)) + 
                 (')' * len(expr.pairs)))
+    
+    @ExpressionPrinter.__call__.register(BoolToReal)
+    def js_print_bool_to_real(self, expr):
+        return '(%s==0:false:true)' % self(expr.arg)
+    
+    @ExpressionPrinter.__call__.register(WeightedMode)
+    def js_print_weighted_mode(self, expr):
+        return 'weightedMode([%s], [%s])' % (', '.join(self(x) for x in expr.data), 
+                                             ', '.join(self(x) for x in expr.weights)
+                                             )
 
+    @ExpressionPrinter.__call__.register(Not)
+    def js_print_not(self, expr):
+        return '!(%s)' % self(expr.arg)
+    
+    @ExpressionPrinter.__call__.register(Or)
+    def js_print_or(self, expr):
+        return reduction(lambda x, y: '(%s || %s)' % (x, y), self, expr.args)
+#         return '(%s || %s)' % (self(expr.lhs), self(expr.rhs))
+    
+    @ExpressionPrinter.__call__.register(And)
+    def js_print_and(self, expr):
+        return reduction(lambda x, y: '(%s && %s)' % (x, y), self, expr.args)
+    
+    @ExpressionPrinter.__call__.register(EqualsBase)
+    def js_print_equals(self, expr):
+        return '(%s === %s)' % (self(expr.lhs), self(expr.rhs))
+    
+    @ExpressionPrinter.__call__.register(FiniteMap)
+    def js_print_finite_map(self, expr):
+        arg = self(expr.arg)
+        return (':'.join(map(lambda pair: '(%s===%s?%s' % 
+                                  (arg, self(pair[1]), self(pair[0])), expr.mapping.items())) + 
+                (')' * len(expr.mapping)))
+    
+#     '{%s:}.' %
+#     % (', '.join(map(lambda x: '%s: %s' 
+#                                                           % (self(x[0]), self(x[1])), expr.mapping.items())),
+#                                             self(expr.arg))
 
