@@ -54,11 +54,18 @@ $ pip install git+https://github.com/modusdatascience/sklearn2code
 ### Supported Estimators 
 
 <table class="tg">
+
   <tr>
     <th class="tg-yw4l"></th>
     <th class="tg-yw4l">Python (Pandas)</th>
     <th class="tg-yw4l">Python (Numpy)</th>
     <th class="tg-yw4l">Javascript</th>
+  </tr>
+   <tr>
+    <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html'>AdaBoost</a></td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">x</td>
+    <td class="tg-yw4l">tbd</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html'>VotingClassifier</a></td>
