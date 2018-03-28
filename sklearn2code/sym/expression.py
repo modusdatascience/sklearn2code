@@ -705,6 +705,8 @@ class WeightedStatistic(Statistic):
 class WeightedMode(WeightedStatistic):
     pass
 
+class WeightedMedian(WeightedStatistic):
+    pass
 
 
 
