@@ -3,7 +3,7 @@ from sklearn2code.sym.expression import RealNumber, Log,\
     MinBase, GreaterBase, GreaterEqualBase, LessEqualBase, LessBase, Nan, IsNan,\
     ProductBase, SumBase, QuotientBase, DifferenceBase, Value, Expit, And, Or,\
     Variable, BoolToReal, Not, FiniteMap, WeightedMode, RealPiecewise,\
-    IntegerPiecewise, BoolPiecewise, EqualsBase
+    IntegerPiecewise, BoolPiecewise, EqualsBase, Boolean
 from six import with_metaclass
 from toolz.functoolz import curry
 from multipledispatch.dispatcher import Dispatcher
@@ -199,6 +199,10 @@ class PandasPrinter(NumpyPrinter):
         return 'asarray(dataframe[\'' + expr.name + '\'])'
 
 class JavascriptPrinter(BasicOperatorPrinter):
+    @ExpressionPrinter.__call__.register(Boolean)
+    def js_print_boolean(self, expr):
+        return 'true' if expr.value == True else 'false' if expr.value == False else NotImplemented
+    
     @ExpressionPrinter.__call__.register(Variable)
     def js_print_variable(self, expr):
         return expr.name
@@ -213,7 +217,7 @@ class JavascriptPrinter(BasicOperatorPrinter):
     
     @ExpressionPrinter.__call__.register(IsNan)
     def js_print_is_nan(self, expr):
-        return 'isNan(' + self(expr.arg) + ')'
+        return 'isNaN(' + self(expr.arg) + ')'
     
     @ExpressionPrinter.__call__.register(Expit)
     def js_print_expit(self, expr):
@@ -227,11 +231,11 @@ class JavascriptPrinter(BasicOperatorPrinter):
     def js_print_piecewise(self, expr):
         return (':'.join(map(lambda pair: '(%s?%s' % 
                                   (self(pair[1]), self(pair[0])), expr.pairs)) + 
-                (')' * len(expr.pairs)))
+                ':null' + (')' * len(expr.pairs)))
     
     @ExpressionPrinter.__call__.register(BoolToReal)
     def js_print_bool_to_real(self, expr):
-        return '(%s==0:false:true)' % self(expr.arg)
+        return '(%s==true?1.0:0.0)' % self(expr.arg)
     
     @ExpressionPrinter.__call__.register(WeightedMode)
     def js_print_weighted_mode(self, expr):
@@ -260,5 +264,5 @@ class JavascriptPrinter(BasicOperatorPrinter):
     def js_print_finite_map(self, expr):
         arg = self(expr.arg)
         return (':'.join(map(lambda pair: '(%s===%s?%s' % 
-                                  (arg, self(pair[1]), self(pair[0])), expr.mapping.items())) + 
-                (')' * len(expr.mapping)))
+                                  (arg, self(pair[0]), self(pair[1])), expr.mapping.items())) + 
+                ':null' + ')' * (len(expr.mapping)))

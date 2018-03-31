@@ -18,6 +18,7 @@ from sklearn.linear_model.ridge import Ridge, RidgeCV
 from sklearn.linear_model.stochastic_gradient import SGDRegressor
 from sklearn.ensemble.forest import RandomForestRegressor
 from sklearn.calibration import CalibratedClassifierCV
+import execjs
 
 if PY2:
     from types import MethodType
@@ -55,7 +56,7 @@ def create_regression_problem_with_missingness_1(m=1000, n=10):
     return (dict(X=X, y=y), dict(X=X), dict(X=X))
 
 test_cases = [
-            (VotingClassifier([('logistic', LogisticRegression()), ('earth', Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]))]), 
+            (VotingClassifier([('logistic', LogisticRegression()), ('earth', Pipeline([('earth', Earth()), ('logistic', LogisticRegression())]))], 'hard', weights=[1.01,1.01]), 
              ['predict'], create_weird_classification_problem_1()),
             (GradientBoostingClassifier(max_depth=10, n_estimators=10), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
             (LogisticRegression(), ['predict_proba', 'predict'], create_weird_classification_problem_1()),
@@ -75,30 +76,32 @@ test_cases = [
             (RandomForestRegressor(), ['predict'], create_regression_problem_1()),
             (CalibratedClassifierCV(LogisticRegression(), 'isotonic'), ['predict_proba'], create_weird_classification_problem_1()),
               ]
-
+ 
 # Create tests for numpy_flat language
 def create_case_numpy_flat(estimator, methods, fit_data, predict_data, export_predict_data):
     def test_case(self):
         model = clone(estimator)
         model.fit(**fit_data)
-        
         for method in  methods:
             pred = getattr(model, method)(**predict_data)
             code = sklearn2code(model, method, numpy_flat)
-            module = exec_module('test_module', code)
-            exported_pred = getattr(module, method)(**export_predict_data['X'])
-            if isinstance(exported_pred, tuple):
-                exported_pred = DataFrame(dict(enumerate(exported_pred)))
-            assert_array_almost_equal(pred, exported_pred)
+            try:
+                module = exec_module('test_module', code)
+                exported_pred = getattr(module, method)(**export_predict_data['X'])
+                if isinstance(exported_pred, tuple):
+                    exported_pred = DataFrame(dict(enumerate(exported_pred)))
+                assert_array_almost_equal(pred, exported_pred)
+            except:
+                print(code)
+                raise
     test_case.__doc__ = ('Testing numpy_flat language exportability of method%s %s of %s' % 
                          ('s' if len(methods)>1 else '', ', '.join(methods), repr(estimator)))
     return test_case
-
+ 
 # All tests will be methods of this class
 class TestExampleEstimatorsNumpyFlat(object):
     pass
-
-
+ 
 # The following loop adds a method to TestExampleEstimators for each test case
 for i, (estimator, methods, (fit_data, predict_data, export_predict_data)) in enumerate(test_cases):
     case = create_case_numpy_flat(estimator, methods, fit_data, predict_data, export_predict_data)
@@ -108,27 +111,31 @@ for i, (estimator, methods, (fit_data, predict_data, export_predict_data)) in en
         case = MethodType(case, None, TestExampleEstimatorsNumpyFlat)
     setattr(TestExampleEstimatorsNumpyFlat, case_name, case)
     del case
-
+  
 # Create tests for pandas language
 def create_case_pandas(estimator, methods, fit_data, predict_data, export_predict_data):
     def test_case(self):
         model = clone(estimator)
         model.fit(**fit_data)
-        
+          
         for method in  methods:
             pred = DataFrame(getattr(model, method)(**predict_data))
             code = sklearn2code(model, method, pandas)
-            module = exec_module('test_module', code)
-            exported_pred = getattr(module, method)(export_predict_data['X'])
-            assert_array_almost_equal(pred, exported_pred)
+            try:
+                module = exec_module('test_module', code)
+                exported_pred = getattr(module, method)(export_predict_data['X'])
+                assert_array_almost_equal(pred, exported_pred)
+            except:
+                print(code)
+                raise
     test_case.__doc__ = ('Testing pandas language exportability of method%s %s of %s' % 
                          ('s' if len(methods)>1 else '', ', '.join(methods), repr(estimator)))
     return test_case
-
+  
 # All tests will be methods of this class
 class TestExampleEstimatorsPandas(object):
     pass
-
+  
 # The following loop adds a method to TestExampleEstimators for each test case
 for i, (estimator, methods, (fit_data, predict_data, export_predict_data)) in enumerate(test_cases):
     case = create_case_pandas(estimator, methods, fit_data, predict_data, export_predict_data)
@@ -138,27 +145,42 @@ for i, (estimator, methods, (fit_data, predict_data, export_predict_data)) in en
         case = MethodType(case, None, TestExampleEstimatorsPandas)
     setattr(TestExampleEstimatorsPandas, case_name, case)
     del case
-    
+     
 def create_case_javascript(estimator, methods, fit_data, predict_data, export_predict_data):
     def test_case(self):
         model = clone(estimator)
         model.fit(**fit_data)
-        
         for method in  methods:
             code = sklearn2code(model, method, javascript)
-            print(code)
-#             pred = DataFrame(getattr(model, method)(**predict_data))
-#             module = exec_module('test_module', code)
-#             exported_pred = getattr(module, method)(export_predict_data['X'])
-#             assert_array_almost_equal(pred, exported_pred)
+            code += '''
+            function predict2(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) {
+            var [x30, x31] = _f5(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
+            var [x29] = _f6(x30, x31);
+            return [x30, x31];
+            };
+            '''
+             
+            js = execjs.get()
+            context = js.compile(code)
+            exported_pred = []
+            try:
+                for _, row in export_predict_data['X'].iterrows():
+                    val = context.eval('%s(%s)' % (method, ', '.join([str(x) if x==x else 'NaN' for x in row])))
+                    exported_pred.append(val)
+                exported_pred = np.array(exported_pred)
+                pred = DataFrame(getattr(model, method)(**predict_data))
+                assert_array_almost_equal(np.ravel(pred), np.ravel(exported_pred))
+            except:
+                print(code)
+                raise
     test_case.__doc__ = ('Testing javascript language exportability of method%s %s of %s' % 
                          ('s' if len(methods)>1 else '', ', '.join(methods), repr(estimator)))
     return test_case
-
+ 
 # All tests will be methods of this class
 class TestExampleEstimatorsJavascript(object):
     pass
-
+ 
 # The following loop adds a method to TestExampleEstimators for each test case
 for i, (estimator, methods, (fit_data, predict_data, export_predict_data)) in enumerate(test_cases):
     case = create_case_javascript(estimator, methods, fit_data, predict_data, export_predict_data)
