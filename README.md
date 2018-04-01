@@ -65,103 +65,103 @@ $ pip install git+https://github.com/modusdatascience/sklearn2code
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html'>AdaBoost</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.VotingClassifier.html'>VotingClassifier</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html'>GradientBoostingClassifier</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html'>LogisticRegression</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.isotonic.IsotonicRegression.html#sklearn.isotonic.IsotonicRegression'>IsotonicRegression</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='https://github.com/scikit-learn-contrib/py-earth'>PyEarth</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html'>ElasticNet</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNetCV.html'>ElasticNetCV</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html'>Lasso</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LassoCV.html'>LassoCV</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html'>Ridge</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeCV.html'>RidgeCV</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html'>SGDRegressor</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.pipeline.FeatureUnion.html'>Pipeline</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.pipeline.FeatureUnion.html'>FeatureUnion</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html'>RandomForestRegressor</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
   <tr>
     <td class="tg-yw4l"><a href='http://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html'>CalibratedClassifierCV</a></td>
     <td class="tg-yw4l">x</td>
     <td class="tg-yw4l">x</td>
-    <td class="tg-yw4l">tbd</td>
+    <td class="tg-yw4l">x</td>
   </tr>
 </table>
 

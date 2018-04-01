@@ -154,14 +154,6 @@ def create_case_javascript(estimator, methods, fit_data, predict_data, export_pr
         model.fit(**fit_data)
         for method in  methods:
             code = sklearn2code(model, method, javascript)
-            code += '''
-            function predict2(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) {
-            var [x30, x31] = _f5(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
-            var [x29] = _f6(x30, x31);
-            return [x30, x31];
-            };
-            '''
-             
             js = execjs.get()
             context = js.compile(code)
             exported_pred = []

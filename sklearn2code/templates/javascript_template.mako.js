@@ -10,7 +10,6 @@ function expit(val) {
 
 function weightedMode(data, weights) {
 	var counts = new Map(data.map(x => [x, 0]))
-//		Array.apply(null, Array(Math.max(data))).map(Number.prototype.valueOf,0);
 	for (i=0; i<data.length; i++){
 		counts[data[i]] += weights[i];
 	};
@@ -19,10 +18,10 @@ function weightedMode(data, weights) {
 	var first = true;
 	var val;
 	var keys = Array.from(counts.keys());
-	keys.sort(function(a, b){return a - b})
-	keys.reverse()
+	keys.sort(function(a, b){return a - b});
+	keys.reverse();
 	for (var key of keys) {
-		val = counts[key]
+		val = counts[key];
 		if (first) {
 			best_key = key;
 			best_val = val;
@@ -33,7 +32,20 @@ function weightedMode(data, weights) {
 		}
 	}
 	return best_key
-//	return counts.map((x, i) => [x, i]).reduce((r, a) => (a[0] > r[0] ? a : r))[1];
+}
+
+function weightedMedian(data, weights) {
+	var order = data.map((x, i) => [x, i]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+	var total = 0.0;
+	var half = weights.reduce((a, b) => a + b, 0) / 2.0;
+	var i;
+	for (i=0; i<order.length; i++) {
+		total += weights[order[i]];
+		if (total > half) {
+			break;
+		};
+	};
+	return data[order[i]];
 }
 
 %for function_ in functions:
