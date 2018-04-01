@@ -19,6 +19,7 @@ from sklearn.linear_model.stochastic_gradient import SGDRegressor
 from sklearn.ensemble.forest import RandomForestRegressor
 from sklearn.calibration import CalibratedClassifierCV
 import execjs
+from sklearn.ensemble.weight_boosting import AdaBoostRegressor
 
 if PY2:
     from types import MethodType
@@ -75,6 +76,7 @@ test_cases = [
             ['transform'], create_weird_classification_problem_1()),
             (RandomForestRegressor(), ['predict'], create_regression_problem_1()),
             (CalibratedClassifierCV(LogisticRegression(), 'isotonic'), ['predict_proba'], create_weird_classification_problem_1()),
+            (AdaBoostRegressor(), ['predict'], create_regression_problem_1()), 
               ]
  
 # Create tests for numpy_flat language

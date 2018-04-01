@@ -3,7 +3,7 @@ from sklearn2code.sym.expression import RealNumber, Log,\
     MinBase, GreaterBase, GreaterEqualBase, LessEqualBase, LessBase, Nan, IsNan,\
     ProductBase, SumBase, QuotientBase, DifferenceBase, Value, Expit, And, Or,\
     Variable, BoolToReal, Not, FiniteMap, WeightedMode, RealPiecewise,\
-    IntegerPiecewise, BoolPiecewise, EqualsBase, Boolean
+    IntegerPiecewise, BoolPiecewise, WeightedMedian, EqualsBase, Boolean
 from six import with_metaclass
 from toolz.functoolz import curry
 from multipledispatch.dispatcher import Dispatcher
@@ -117,6 +117,15 @@ class NumpyPrinter(BasicOperatorPrinter):
                  ', '.join(map(self, expr.weights)),
                  ', '.join(map(self, expr.data)),
                  ))
+        
+    @ExpressionPrinter.__call__.register(WeightedMedian)    
+    def numpy_print_weighted_median(self, expr):
+        return('weighted_median(weights=array([%s]), data=array([%s]))'
+               %
+               (
+                ', '.join(map(self, expr.weights)), 
+                ', '.join(map(self, expr.data)),
+                ))
     
     @ExpressionPrinter.__call__.register(FiniteMap)
     def numpy_print_finite_map(self, expr):
@@ -240,6 +249,12 @@ class JavascriptPrinter(BasicOperatorPrinter):
     @ExpressionPrinter.__call__.register(WeightedMode)
     def js_print_weighted_mode(self, expr):
         return 'weightedMode([%s], [%s])' % (', '.join(self(x) for x in expr.data), 
+                                             ', '.join(self(x) for x in expr.weights)
+                                             )
+    
+    @ExpressionPrinter.__call__.register(WeightedMedian)
+    def js_print_weighted_median(self, expr):
+        return 'weightedMedian([%s], [%s])' % (', '.join(self(x) for x in expr.data), 
                                              ', '.join(self(x) for x in expr.weights)
                                              )
 
