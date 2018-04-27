@@ -3,10 +3,14 @@ from sklearn2code.sym.expression import RealNumber, Log,\
     MinBase, GreaterBase, GreaterEqualBase, LessEqualBase, LessBase, Nan, IsNan,\
     ProductBase, SumBase, QuotientBase, DifferenceBase, Value, Expit, And, Or,\
     Variable, BoolToReal, Not, FiniteMap, WeightedMode, RealPiecewise,\
-    IntegerPiecewise, BoolPiecewise, WeightedMedian, EqualsBase, Boolean
+    IntegerPiecewise, BoolPiecewise, WeightedMedian, EqualsBase, Boolean,\
+    VectorExpression
 from six import with_metaclass
 from toolz.functoolz import curry
 from multipledispatch.dispatcher import Dispatcher
+
+class ExpressionTypeNotSupportedError(Exception):
+    pass
 
 @curry
 def reduction(binary, self, args):
@@ -52,42 +56,58 @@ class ExpressionPrinter(with_metaclass(ExpressionPrinterMeta, object)):
 
 class BasicOperatorPrinter(ExpressionPrinter):
     @ExpressionPrinter.__call__.register(Value)
-    def numpy_print_value(self, expr):
+    def basic_print_value(self, expr):
         return str(expr)
     
     @ExpressionPrinter.__call__.register(ProductBase)
-    def numpy_print_product(self, expr):
+    def basic_print_product(self, expr):
         return '(%s)' % ' * '.join(map(self, expr.args))
     
     @ExpressionPrinter.__call__.register(SumBase)
-    def numpy_print_sum(self, expr):
+    def basic_print_sum(self, expr):
         return '(%s)' % ' + '.join(map(self, expr.args))
     
     @ExpressionPrinter.__call__.register(QuotientBase)
-    def numpy_print_quotient(self, expr):
+    def basic_print_quotient(self, expr):
         return '(%s / %s)' % (self(expr.lhs), self(expr.rhs))
     
     @ExpressionPrinter.__call__.register(DifferenceBase)
-    def numpy_print_difference(self, expr):
+    def basic_print_difference(self, expr):
         return '(%s - %s)' % (self(expr.lhs), self(expr.rhs))
     
     @ExpressionPrinter.__call__.register(GreaterBase)
-    def numpy_print_greater(self, expr):
+    def basic_print_greater(self, expr):
         return '(%s > %s)' % (self(expr.lhs), self(expr.rhs))
     
     @ExpressionPrinter.__call__.register(GreaterEqualBase)
-    def numpy_print_greater_equal(self, expr):
+    def basic_print_greater_equal(self, expr):
         return '(%s >= %s)' % (self(expr.lhs), self(expr.rhs))
     
     @ExpressionPrinter.__call__.register(LessBase)
-    def numpy_print_less(self, expr):
+    def basic_print_less(self, expr):
         return '(%s < %s)' % (self(expr.lhs), self(expr.rhs))
     
     @ExpressionPrinter.__call__.register(LessEqualBase)
-    def numpy_print_less_equal(self, expr):
+    def basic_print_less_equal(self, expr):
         return '(%s <= %s)' % (self(expr.lhs), self(expr.rhs))
     
+    @ExpressionPrinter.__call__.register(VectorExpression)
+    def basic_print_vector_expression(self, expr):
+        if len(expr.components) > 1:
+            return '[%s]' % (', '.join(map(self, expr.components)))
+        elif len(expr.components) == 1:
+            # Special case for vector of length 1: treat as scalar.
+            # An unfortunate compromise for compatibility with various 
+            # languages' multiple assignment syntax.  
+            return self(expr.components[0])
+        else:
+            return '[]'
+    
 class NumpyPrinter(BasicOperatorPrinter):
+    @ExpressionPrinter.__call__.register(VectorExpression)
+    def numpy_print_vector_expression(self, expr):
+        return 'array([%s]).T' % (', '.join(map(self, expr.components)))
+    
     @ExpressionPrinter.__call__.register(RealNumber)
     def numpy_print_real_number(self, expr):
         return repr(expr.value)
@@ -203,11 +223,19 @@ class NumpyPrinter(BasicOperatorPrinter):
         return '%s' % self(expr.arg)
 
 class PandasPrinter(NumpyPrinter):
+    @ExpressionPrinter.__call__.register(VectorExpression)
+    def pandas_print_vector_expression(self, expr):
+        raise ExpressionTypeNotSupportedError('Because pandas is a flat data format, it\'s not possible to render vector expressions.')
+    
     @ExpressionPrinter.__call__.register(Variable)
     def pandas_print_variable(self, expr):
         return 'asarray(dataframe[\'' + expr.name + '\'])'
 
 class JavascriptPrinter(BasicOperatorPrinter):
+    @ExpressionPrinter.__call__.register(VectorExpression)
+    def js_print_vector_expression(self, expr):
+        raise ExpressionTypeNotSupportedError('Because pandas is a flat data format, it\'s not possible to render vector expressions.')
+    
     @ExpressionPrinter.__call__.register(Boolean)
     def js_print_boolean(self, expr):
         return 'true' if expr.value == True else 'false' if expr.value == False else NotImplemented

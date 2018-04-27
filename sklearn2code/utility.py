@@ -2,6 +2,8 @@ import imp
 from six import exec_, string_types
 import numpy as np
 from toolz.functoolz import curry
+from operator import __add__
+from six.moves import reduce
 
 @curry
 def tupsmap(n, fun, tups):
@@ -22,6 +24,32 @@ def tupget(n, tup):
 
 def isiterable(obj):
     return hasattr(obj, '__iter__')
+
+def tupshape(obj):
+    if isiterable(obj) and not isinstance(obj, string_types):
+        return tupshape(obj)
+    else:
+        return tuple()
+
+@curry
+def tupall(predicate, obj):
+    if isiterable(obj) and not isinstance(obj, string_types):
+        return all(map(tupall(predicate), obj))
+    else:
+        return predicate(obj)
+
+@curry
+def tupany(predicate, obj):
+    if isiterable(obj) and not isinstance(obj, string_types):
+        return any(map(tupall(predicate), obj))
+    else:
+        return predicate(obj)
+
+def flatten(obj):
+    if isiterable(obj) and not isinstance(obj, string_types):
+        return reduce(__add__, map(flatten, obj), tuple())
+    else:
+        return (obj,)
 
 def tupify(obj):
     if isiterable(obj) and not isinstance(obj, string_types):

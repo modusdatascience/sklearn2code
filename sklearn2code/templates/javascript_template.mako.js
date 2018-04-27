@@ -1,3 +1,7 @@
+<%!
+from sklearn2code.sym.function import VariableNameFactory
+%>
+
 function expit(val) {
 	if (val >= 0) {
         var z = Math.exp(-val);
@@ -48,10 +52,29 @@ function weightedMedian(data, weights) {
 	return data[order[i]];
 }
 
+function assign(arr, vars) {
+    var x = {};
+    var num = Math.min(arr.length, vars.length);
+    for (var i = 0; i < num; ++i) {
+        x[vars[i]] = arr[i];
+    }
+    return x;
+}
+
 %for function_ in functions:
+	<%
+	Var = VariableNameFactory(existing=function_.all_variables())
+	%>
 function ${namer(function_)}(${', '.join(map(str, function_.inputs))}) {
 	%for assignments, (called_function, arguments) in function_.calls:
-	var [${', '.join(map(str, assignments))}] = ${namer(called_function)}(${', '.join(map(str, arguments))});
+	<%
+	dummy = Var()
+	%>
+	var ${dummy} = assign(${namer(called_function)}(${', '.join(map(str, arguments))}), [${', '.join(map(lambda x: '"%s"' % str(x), assignments))}])
+//	var [${', '.join(map(str, assignments))}] = ${namer(called_function)}(${', '.join(map(str, arguments))});
+	%for assgn in assignments:
+	${str(assgn)} = ${dummy}.${str(assgn)}
+	%endfor
 	%endfor
 	return [${', '.join(map(printer, function_.outputs))}];
 };
