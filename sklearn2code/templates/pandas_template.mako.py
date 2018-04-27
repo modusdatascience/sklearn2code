@@ -24,7 +24,7 @@ def ${namer(function)}(dataframe):
 %endfor
     result = DataFrame(index=dataframe.index)
 % for i, output in enumerate(function.outputs):
-    result[${i}] = ${printer(output)}
+    result[${i}] = ${printer(output, 0)}
 %endfor
     return result
 %endfor

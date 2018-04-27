@@ -1,5 +1,6 @@
 <%!
 from sklearn2code.sym.function import VariableNameFactory
+from toolz import flip
 %>
 
 function expit(val) {
@@ -76,6 +77,6 @@ function ${namer(function_)}(${', '.join(map(str, function_.inputs))}) {
 	${str(assgn)} = ${dummy}.${str(assgn)}
 	%endfor
 	%endfor
-	return [${', '.join(map(printer, function_.outputs))}];
+	return [${', '.join(map(flip(printer)(0), function_.outputs))}];
 };
 %endfor
