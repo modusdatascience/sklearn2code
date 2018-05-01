@@ -1,14 +1,14 @@
 from toolz.functoolz import flip, compose, curry
 from functools import singledispatch
 from sklearn2code.utility import tupfun
-from operator import methodcaller, __or__
+from operator import methodcaller, __or__, __invert__, __eq__
 from multipledispatch.dispatcher import Dispatcher
 from six.moves import reduce
 from six import with_metaclass
 from abc import ABCMeta, abstractmethod
 from frozendict import frozendict
 from toolz.curried import itemmap
-from itertools import chain
+from itertools import chain, starmap
 
 def undefined(*args):
     raise NotImplementedError()
@@ -238,6 +238,134 @@ class Constant(Expression):
     def subs(self, varmap):
         return self
 
+class VectorExpression(Expression):
+    def __init__(self, *components):
+        self.components = tuple(components)
+    
+    def __str__(self):
+        return 'VectorExpression(%s)' % (', '.join(map(str, self.components)))
+    
+    def __repr__(self):
+        return 'VectorExpression(%s)' % (', '.join(map(repr, self.components)))
+    
+    def __eq__(self, other):
+        if not isinstance(other, VectorExpression):
+            return NotImplemented
+        return all(starmap(__eq__, zip(self.components, other.components)))
+    
+    def __hash__(self):
+        return hash(tuple(map(hash, self.components)))
+    
+    @property
+    def free_symbols(self):
+        return reduce(__or__, map(flip(getattr)('free_symbols'), self.components), set())
+    
+    def subs(self, varmap):
+        return VectorExpression(*map(methodcaller('subs', varmap), self.components))
+    
+    @property
+    def _dim(self):
+        return len(self.components)
+    
+    def __add__(self, other):
+        if not isinstance(other, VectorExpression):
+            return VectorExpression(*[component + other for component in self.components])
+        if self._dim != other._dim:
+            raise ValueError('Can\'t add VectorExpressions of different dimensions.')
+        return VectorExpression(*[x + y for x, y in zip(self.components, other.components)])
+     
+    def __radd__(self, other):
+        if not isinstance(other, VectorExpression):
+            return VectorExpression(*[other + component for component in self.components])
+        if self._dim != other._dim:
+            raise ValueError('Can\'t add VectorExpressions of different dimensions.')
+        return VectorExpression(*[y + x for x, y in zip(self.components, other.components)])
+     
+    def __sub__(self, other):
+        if not isinstance(other, VectorExpression):
+            return VectorExpression(*[component - other for component in self.components])
+        if self._dim != other._dim:
+            raise ValueError('Can\'t add VectorExpressions of different dimensions.')
+        return VectorExpression(*[x - y for x, y in zip(self.components, other.components)])
+     
+    def __rsub__(self, other):
+        if not isinstance(other, VectorExpression):
+            return VectorExpression(*[other - component for component in self.components])
+        if self._dim != other._dim:
+            raise ValueError('Can\'t add VectorExpressions of different dimensions.')
+        return VectorExpression(*[y - x for x, y in zip(self.components, other.components)])
+     
+    def __mul__(self, other):
+        if not isinstance(other, VectorExpression):
+            return VectorExpression(*[component * other for component in self.components])
+        if self._dim != other._dim:
+            raise ValueError('Can\'t add VectorExpressions of different dimensions.')
+        return VectorExpression(*[x * y for x, y in zip(self.components, other.components)])
+     
+    def __rmul__(self, other):
+        if not isinstance(other, VectorExpression):
+            return VectorExpression(*[other * component for component in self.components])
+        if self._dim != other._dim:
+            raise ValueError('Can\'t add VectorExpressions of different dimensions.')
+        return VectorExpression(*[y * x for x, y in zip(self.components, other.components)])
+     
+    def __truediv__(self, other):
+        if not isinstance(other, VectorExpression):
+            return VectorExpression(*[component / other for component in self.components])
+        if self._dim != other._dim:
+            raise ValueError('Can\'t add VectorExpressions of different dimensions.')
+        return VectorExpression(*[x / y for x, y in zip(self.components, other.components)])
+     
+    def __rtruediv__(self, other):
+        if not isinstance(other, VectorExpression):
+            return VectorExpression(*[other / component for component in self.components])
+        if self._dim != other._dim:
+            raise ValueError('Can\'t add VectorExpressions of different dimensions.')
+        return VectorExpression(*[y / x for x, y in zip(self.components, other.components)])
+     
+    def __and__(self, other):
+        if not isinstance(other, VectorExpression):
+            return VectorExpression(*[component & other for component in self.components])
+        if self._dim != other._dim:
+            raise ValueError('Can\'t add VectorExpressions of different dimensions.')
+        return VectorExpression(*[x & y for x, y in zip(self.components, other.components)])
+     
+    def __rand__(self, other):
+        if not isinstance(other, VectorExpression):
+            return VectorExpression(*[other & component for component in self.components])
+        if self._dim != other._dim:
+            raise ValueError('Can\'t add VectorExpressions of different dimensions.')
+        return VectorExpression(*[y & x for x, y in zip(self.components, other.components)])
+     
+    def __or__(self, other):
+        if not isinstance(other, VectorExpression):
+            return VectorExpression(*[component | other for component in self.components])
+        if self._dim != other._dim:
+            raise ValueError('Can\'t add VectorExpressions of different dimensions.')
+        return VectorExpression(*[x | y for x, y in zip(self.components, other.components)])
+     
+    def __ror__(self, other):
+        if not isinstance(other, VectorExpression):
+            return VectorExpression(*[other | component for component in self.components])
+        if self._dim != other._dim:
+            raise ValueError('Can\'t add VectorExpressions of different dimensions.')
+        return VectorExpression(*[y | x for x, y in zip(self.components, other.components)])
+     
+    def __invert__(self):
+        return VectorExpression(*map(__invert__, self.components))
+    
+    def sum(self):
+        return Sum(*(self.components))
+    
+    def product(self):
+        return Product(*(self.components))
+
+def Vec(*components):
+    if len(components) == 1:
+        return components[0]
+    else:
+        return VectorExpression(*components)
+
 class UnaryFunction(Expression):
     def __init__(self, arg):
         super(UnaryFunction, self).__init__(arg)
@@ -429,6 +557,7 @@ class SumInt(IntegerExpression, SumBase, FunctionOfInts):
 Sum = dispatch('Sum')
 Sum.register(RealNumberExpression)(SumReal)
 Sum.register(IntegerExpression)(SumInt)
+Sum.register(VectorExpression)(methodcaller('sum'))
 
 class DifferenceBase(NumberExpression, BinaryFunction):
     def __str__(self):
@@ -465,6 +594,7 @@ class ProductInt(IntegerExpression, ProductBase, FunctionOfInts):
 Product = dispatch('Product')
 Product.register(RealNumberExpression)(ProductReal)
 Product.register(IntegerExpression)(ProductInt)
+Product.register(VectorExpression)(methodcaller('product'))
 
 class PowerBase(NumberExpression, BinaryFunction):
     def __str__(self):

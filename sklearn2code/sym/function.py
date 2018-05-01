@@ -1,7 +1,8 @@
 from toolz.functoolz import curry, flip as tzflip, identity, compose,\
     flip
 from toolz.curried import itemmap
-from operator import methodcaller, __add__, __mul__, __sub__, __or__
+from operator import methodcaller, __add__, __mul__, __sub__, __or__,\
+    __getitem__
 from itertools import starmap
 from six import PY2, PY3
 from types import MethodType
@@ -42,6 +43,12 @@ class VariableFactory(object):
         self.current_n += 1
         return RealVariable(result)
 
+class VariableNameFactory(VariableFactory):
+    def __call__(self):
+        result = self.base + str(self.current_n)
+        self.current_n += 1
+        return result
+
 class Function(object):
     def __init__(self, inputs, calls, outputs, origin=None):
         '''
@@ -75,6 +82,12 @@ class Function(object):
                              tupsmap(0, compose(tuple, curry(map)(safe_symbol)), calls))
         self.outputs = tupify(outputs)
         self._validate()
+    
+    def all_variables(self):
+        result = set()
+        result |= set(self.inputs)
+        result |= reduce(__or__, map(compose(set, flip(__getitem__)(0)), self.calls), set())
+        return result
     
     def __str__(self):
         return 'Function(%s, %s, %s)' % ('('+', '.join(map(str, self.inputs)) + ')', 

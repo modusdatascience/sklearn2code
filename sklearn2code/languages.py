@@ -13,7 +13,7 @@ from networkx.classes.digraph import DiGraph
 from sklearn2code.sym.printers import NumpyPrinter, PandasPrinter,\
     JavascriptPrinter
 from sklearn2code.utility import tupapply
-from sklearn2code.sym.function import Function, safe_symbol
+from sklearn2code.sym.function import Function, safe_symbol, VariableNameFactory
 
 method_dispatcher = dict(
                          predict = sym_predict,
@@ -47,7 +47,8 @@ class Language(object):
         names = dict(zip(functions, methods))
         unnamed = tuple(filter(complement(names.__contains__), sorted_functions))
         names = merge(names, dict(tupsmap(1, curry(__mod__)('_f%d'), map(compose(tuple,reversed), enumerate(unnamed)))))
-        return self.template.render(functions=sorted_functions, printer=self.printer, namer=names.__getitem__, **extra_args)
+        return self.template.render(functions=sorted_functions, printer=self.printer, 
+                                    namer=names.__getitem__, **extra_args)
     
 numpy_flat = Language(NumpyPrinter(), Template(filename=os.path.join(template_dir, 'numpy_flat_template.mako.py')))
 pandas = Language(PandasPrinter(), Template(filename=os.path.join(template_dir, 'pandas_template.mako.py')))
