@@ -63,7 +63,7 @@ def toposort(functions):
     index = {}
     for function in functions:
         _create_index(function, index, counter)
-    inverse_index = dict(map(flip, index.items()))
+    inverse_index = dict(list(map(reversed, index.items())))
     digraphs = list(map(methodcaller('_digraph', index), functions))
     digraph = compose_all(digraphs)
     return tuple(map(inverse_index.__getitem__, networkx.topological_sort(digraph)))
@@ -205,7 +205,7 @@ class Function(object):
         for _, (fun, _) in self.calls:
             g.add_node(index[fun])
             g.add_edge(index[fun], index[self])
-            g = networkx.compose(g, fun.digraph())
+            g = networkx.compose(g, fun._digraph(index))
         return g
     
     def compose(self, right):

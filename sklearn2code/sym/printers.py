@@ -138,7 +138,7 @@ class NumpyPrinter(BasicOperatorPrinter):
                  ', '.join(map(self, expr.data)),
                  ))
         
-    @ExpressionPrinter.__call__.register(WeightedMedian, int)    
+    @ExpressionPrinter.__call__.register(WeightedMedian)    
     def numpy_print_weighted_median(self, expr):
         return('weighted_median(weights=array([%s]), data=array([%s]))'
                %
