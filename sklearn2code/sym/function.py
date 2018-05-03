@@ -14,6 +14,7 @@ from toolz.dicttoolz import merge
 from sklearn2code.utility import tupify, tupsmap, tupfun, tupget
 from sklearn2code.sym.expression import Variable, RealVariable
 import re
+from networkx.algorithms.operators.all import compose_all
 
 def safe_symbol(s):
     if isinstance(s, Variable):
@@ -48,6 +49,24 @@ class VariableNameFactory(VariableFactory):
         result = self.base + str(self.current_n)
         self.current_n += 1
         return result
+
+def _create_index(function, index, counter=None):
+    if counter is None:
+        counter = [0]
+    index[function] = counter[0]
+    counter[0] += 1
+    for _, (fun, _) in function.calls:
+        _create_index(fun, index, counter)
+
+def toposort(functions):
+    counter = [0]
+    index = {}
+    for function in functions:
+        _create_index(function, index, counter)
+    inverse_index = dict(map(flip, index.items()))
+    digraphs = list(map(methodcaller('_digraph', index), functions))
+    digraph = compose_all(digraphs)
+    return tuple(map(inverse_index.__getitem__, networkx.topological_sort(digraph)))
 
 class Function(object):
     def __init__(self, inputs, calls, outputs, origin=None):
@@ -180,12 +199,12 @@ class Function(object):
     def __hash__(self):
         return hash((self.inputs, self.calls, self.outputs))
     
-    def digraph(self):
+    def _digraph(self, index):
         g = DiGraph()
-        g.add_node(self)
+        g.add_node(index[self])
         for _, (fun, _) in self.calls:
-            g.add_node(fun)
-            g.add_edge(fun, self)
+            g.add_node(index[fun])
+            g.add_edge(index[fun], index[self])
             g = networkx.compose(g, fun.digraph())
         return g
     

@@ -13,7 +13,8 @@ from networkx.classes.digraph import DiGraph
 from sklearn2code.sym.printers import NumpyPrinter, PandasPrinter,\
     JavascriptPrinter
 from sklearn2code.utility import tupapply
-from sklearn2code.sym.function import Function, safe_symbol, VariableNameFactory
+from sklearn2code.sym.function import Function, safe_symbol, VariableNameFactory,\
+    toposort
 
 method_dispatcher = dict(
                          predict = sym_predict,
@@ -42,8 +43,7 @@ class Language(object):
         if argument_names is not None:
             outer = Function(tuple(map(safe_symbol, argument_names)), tuple(), tuple(map(safe_symbol, argument_names)))
             functions = tuple(map(lambda x: x.compose(outer), functions))
-        g = reduce(networkx.compose, map(methodcaller('digraph'), functions), DiGraph())
-        sorted_functions = tuple(networkx.topological_sort(g))
+        sorted_functions = toposort(functions)
         names = dict(zip(functions, methods))
         unnamed = tuple(filter(complement(names.__contains__), sorted_functions))
         names = merge(names, dict(tupsmap(1, curry(__mod__)('_f%d'), map(compose(tuple,reversed), enumerate(unnamed)))))
