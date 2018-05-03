@@ -11,15 +11,13 @@ def weighted_median(data, weights):
     median_idx = median_or_above.argmax(axis=1)
     medians = sorted_idx[arange(data.shape[0]), median_idx]
     return data[arange(data.shape[0]), medians]
-<%!
-from toolz import flip
-%>
+
 %for function in functions:
 def ${namer(function)}(${', '.join(map(str, function.inputs)) + ', ' if function.inputs else ''}**kwargs):
 %for assignments, (called_function, arguments) in function.calls:
     ${', '.join(map(str, assignments))} = ${namer(called_function)}(${', '.join(map(str, arguments))})
 %endfor
-    return ${', '.join(map(flip(printer)(0), function.outputs))}
+    return ${', '.join(map(printer, function.outputs))}
 %endfor
 
 
