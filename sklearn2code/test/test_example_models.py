@@ -1,5 +1,6 @@
 import numpy as np
-from sklearn.ensemble.gradient_boosting import GradientBoostingClassifier
+from sklearn.ensemble.gradient_boosting import GradientBoostingClassifier,\
+    GradientBoostingRegressor
 from sklearn.base import clone
 from numpy.ma.testutils import assert_array_almost_equal
 from six import PY2
@@ -22,6 +23,8 @@ import execjs
 from sklearn.ensemble.weight_boosting import AdaBoostRegressor
 from sklearn.ensemble.bagging import BaggingRegressor, BaggingClassifier
 from sklearn2code.sym.printers import ExpressionTypeNotSupportedError
+from sklearn.datasets.base import load_boston
+from xgboost.sklearn import XGBRegressor
 
 if PY2:
     from types import MethodType
@@ -48,6 +51,13 @@ def create_regression_problem_1(m=1000, n=10):
     y = np.random.normal(np.dot(X, beta), .1)
     return (dict(X=X, y=y), dict(X=X), dict(X=X))
 
+def create_regression_problem_for_xgb_1(m=1000, n=10):
+    np.random.seed(1)
+    X = DataFrame(np.random.normal(size=(m,n)), columns=['x%d' % i for i in range(n)])
+    beta = np.random.normal(size=n) *10
+    y = np.random.normal(np.dot(X, beta), .1)
+    return (dict(X=X, y=y), dict(data=X), dict(X=X))
+
 def create_regression_problem_with_missingness_1(m=1000, n=10):
     np.random.seed(1)
     X = np.random.normal(size=(m,n))
@@ -56,6 +66,11 @@ def create_regression_problem_with_missingness_1(m=1000, n=10):
     missing = np.random.binomial(1, .1, size=X.shape)
     X[missing] = np.nan
     X = DataFrame(X, columns=['x%d' % i for i in range(n)])
+    return (dict(X=X, y=y), dict(X=X), dict(X=X))
+
+def create_boston_housing():
+    X, y = load_boston(return_X_y=True)
+    X = DataFrame(X, columns=['x%d' % i for i in range(X.shape[1])])
     return (dict(X=X, y=y), dict(X=X), dict(X=X))
 
 test_cases = [
@@ -81,6 +96,8 @@ test_cases = [
             (AdaBoostRegressor(), ['predict'], create_regression_problem_1()),
             (BaggingRegressor(), ['predict'], create_regression_problem_1()),
             (BaggingClassifier(), ['predict_proba'], create_weird_classification_problem_1()),
+            (GradientBoostingRegressor(verbose=True), ['predict'], create_regression_problem_1(m=100000, n=200)),
+            (XGBRegressor(), ['predict'], create_regression_problem_for_xgb_1())
               ]
  
 # Create tests for numpy_flat language
@@ -96,7 +113,7 @@ def create_case_numpy_flat(estimator, methods, fit_data, predict_data, export_pr
                 exported_pred = getattr(module, method)(**export_predict_data['X'])
                 if isinstance(exported_pred, tuple):
                     exported_pred = DataFrame(dict(enumerate(exported_pred)))
-                assert_array_almost_equal(pred, exported_pred)
+                assert_array_almost_equal(pred, exported_pred, 3)
             except:
 #                 print(code)
 #                 import clipboard
@@ -119,13 +136,13 @@ for i, (estimator, methods, (fit_data, predict_data, export_predict_data)) in en
         case = MethodType(case, None, TestExampleEstimatorsNumpyFlat)
     setattr(TestExampleEstimatorsNumpyFlat, case_name, case)
     del case
-    
+     
 # Create tests for pandas language
 def create_case_pandas(estimator, methods, fit_data, predict_data, export_predict_data):
     def test_case(self):
         model = clone(estimator)
         model.fit(**fit_data)
-            
+             
         for method in  methods:
             pred = DataFrame(getattr(model, method)(**predict_data))
             try:
@@ -135,7 +152,7 @@ def create_case_pandas(estimator, methods, fit_data, predict_data, export_predic
             try:
                 module = exec_module('test_module', code)
                 exported_pred = getattr(module, method)(export_predict_data['X'])
-                assert_array_almost_equal(pred, exported_pred)
+                assert_array_almost_equal(pred, exported_pred, 3)
             except:
 #                 print(code)
                 import clipboard
@@ -144,11 +161,11 @@ def create_case_pandas(estimator, methods, fit_data, predict_data, export_predic
     test_case.__doc__ = ('Testing pandas language exportability of method%s %s of %s' % 
                          ('s' if len(methods)>1 else '', ', '.join(methods), repr(estimator)))
     return test_case
-    
+     
 # All tests will be methods of this class
 class TestExampleEstimatorsPandas(object):
     pass
-    
+     
 # The following loop adds a method to TestExampleEstimators for each test case
 for i, (estimator, methods, (fit_data, predict_data, export_predict_data)) in enumerate(test_cases):
     case = create_case_pandas(estimator, methods, fit_data, predict_data, export_predict_data)
@@ -158,7 +175,7 @@ for i, (estimator, methods, (fit_data, predict_data, export_predict_data)) in en
         case = MethodType(case, None, TestExampleEstimatorsPandas)
     setattr(TestExampleEstimatorsPandas, case_name, case)
     del case
-       
+        
 def create_case_javascript(estimator, methods, fit_data, predict_data, export_predict_data):
     def test_case(self):
         model = clone(estimator)
@@ -177,7 +194,7 @@ def create_case_javascript(estimator, methods, fit_data, predict_data, export_pr
                     exported_pred.append(val)
                 exported_pred = np.array(exported_pred)
                 pred = DataFrame(getattr(model, method)(**predict_data))
-                assert_array_almost_equal(np.ravel(pred), np.ravel(exported_pred))
+                assert_array_almost_equal(np.ravel(pred), np.ravel(exported_pred), 3)
             except:
 #                 print(code)
                 import clipboard
@@ -186,11 +203,11 @@ def create_case_javascript(estimator, methods, fit_data, predict_data, export_pr
     test_case.__doc__ = ('Testing javascript language exportability of method%s %s of %s' % 
                          ('s' if len(methods)>1 else '', ', '.join(methods), repr(estimator)))
     return test_case
-   
+    
 # All tests will be methods of this class
 class TestExampleEstimatorsJavascript(object):
     pass
-    
+     
 # The following loop adds a method to TestExampleEstimators for each test case
 for i, (estimator, methods, (fit_data, predict_data, export_predict_data)) in enumerate(test_cases):
     case = create_case_javascript(estimator, methods, fit_data, predict_data, export_predict_data)
