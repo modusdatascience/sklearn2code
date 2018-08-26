@@ -51,6 +51,7 @@ class Language(object):
                                     namer=names.__getitem__, **extra_args)
     
 numpy_flat = Language(NumpyPrinter(), Template(filename=os.path.join(template_dir, 'numpy_flat_template.mako.py')))
+numpy_flat_kwargs = Language(NumpyPrinter(), Template(filename=os.path.join(template_dir, 'numpy_flat_kwargs_template.mako.py')))
 pandas = Language(PandasPrinter(), Template(filename=os.path.join(template_dir, 'pandas_template.mako.py')))
 javascript = Language(JavascriptPrinter(), Template(filename=os.path.join(template_dir, 'javascript_template.mako.js')))
 
