@@ -185,7 +185,7 @@ def create_case_javascript(estimator, methods, fit_data, predict_data, export_pr
                 code = sklearn2code(model, method, javascript)
             except ExpressionTypeNotSupportedError:
                 continue
-            js = execjs.get()
+            js = execjs.get('Node')
             context = js.compile(code)
             exported_pred = []
             try:

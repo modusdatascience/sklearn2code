@@ -97,8 +97,8 @@ class Node(object):
 
 @sym_predict.register(XGBRegressor)
 def sym_predict_xgb_regressor(estimator):
-    dump = estimator.booster().get_dump()
-    inputs = tuple(map(RealVariable, estimator.booster().feature_names))
+    dump = estimator.get_booster().get_dump()
+    inputs = tuple(map(RealVariable, estimator.get_booster().feature_names))
     Var = VariableFactory(existing=inputs)
     calls = tuple(map(lambda x: ((Var(),), (x, inputs)), map(lambda x: Function(inputs, tuple(), (x.expression(),)), map(Node.from_str, dump))))
     output = reduce(__add__, map(compose(first, first), calls)) + RealNumber(0.5) # TODO: Why do I have to add 0.5?

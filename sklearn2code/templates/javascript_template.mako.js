@@ -9,20 +9,20 @@ function expit(val) {
 	} else {
         var z = Math.exp(val);
         return z / (1 + z);
-	};
-};
+	}
+}
 
 function weightedMode(data, weights) {
 	var counts = new Map(data.map(x => [x, 0]))
-	for (i=0; i<data.length; i++){
+	for (var i=0; i<data.length; i++){
 		counts[data[i]] += weights[i];
-	};
+	}
 	var best_key;
 	var best_val;
 	var first = true;
 	var val;
 	var keys = Array.from(counts.keys());
-	keys.sort(function(a, b){return a - b});
+	keys.sort(function(a, b){return a - b;});
 	keys.reverse();
 	for (var key of keys) {
 		val = counts[key];
@@ -35,7 +35,7 @@ function weightedMode(data, weights) {
 			best_key = key;
 		}
 	}
-	return best_key
+	return best_key;
 }
 
 function weightedMedian(data, weights) {
@@ -47,8 +47,8 @@ function weightedMedian(data, weights) {
 		total += weights[order[i]];
 		if (total > half) {
 			break;
-		};
-	};
+		}
+	}
 	return data[order[i]];
 }
 
@@ -77,5 +77,5 @@ function ${namer(function_)}(${', '.join(map(str, function_.inputs))}) {
 	%endfor
 	%endfor
 	return [${', '.join(map(printer, function_.outputs))}];
-};
+}
 %endfor
