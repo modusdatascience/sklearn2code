@@ -5,7 +5,7 @@ Sklearn2Code converts most scikit-learn estimators into source code in different
 
 
 ### An Example 
-Here's an example in which an `Earth` regressor is fitted to the Boston housing data set, then converted to Python code.
+Here's an example in which a `RandomForest` regressor is fitted to the Boston housing data set, then converted to Python code.
 ```python
 from sklearn.datasets.base import load_boston
 from sklearn.ensemble import RandomForestRegressor
