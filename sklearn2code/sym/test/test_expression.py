@@ -1,5 +1,6 @@
 from sklearn2code.sym.expression import true, RealVariable,\
-    Piecewise, RealPiecewise, Log, Max, MaxReal, VectorExpression, RealNumber
+    Piecewise, RealPiecewise, Log, Max, MaxReal, VectorExpression, RealNumber,\
+    Vector, Integer, Ordered, OrderedReal
 from nose.tools import assert_equal, assert_is_instance
 from sklearn2code.sym.printers import NumpyPrinter
 
@@ -25,6 +26,24 @@ def test_numpy_printer():
     expr = Piecewise((-Log(x), x > y), (y, true))
     assert_equal(numpy_print(expr), 'select([greater(x, y), True], [-log(x), y], default=nan).astype(float)')
 
+def test_vector():
+    x = RealVariable('x')
+    y = RealVariable('y')
+    vector = Vector(x,y)
+    assert_equal(vector[Integer(0)], x)
+    assert_equal(vector[Integer(1)], y)
+    assert_equal(vector.sum(), x+y)
+    assert_equal(vector.dim, Integer(2))
+
+def test_ordered():
+    x = RealVariable('x')
+    y = RealVariable('y')
+    ordered = Ordered(x,y)
+    assert_equal(ordered[Integer(0)], OrderedReal.Component(ordered, Integer(0)))
+    assert_equal(ordered[Integer(1)], OrderedReal.Component(ordered, Integer(1)))
+    assert_equal(ordered.sum(), x+y)
+    assert_equal(ordered.dim, Integer(2))
+    
 # def test_vector_expression():
 #     x = RealVariable('x')
 #     v1 = VectorExpression(RealNumber(1), x)

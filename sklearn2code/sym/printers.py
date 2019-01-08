@@ -1,4 +1,4 @@
-from sklearn2code.sym.expression import RealNumber, Log,\
+from .expression import RealNumber, Log,\
     PiecewiseBase, NegateBase, MaxBase,\
     MinBase, GreaterBase, GreaterEqualBase, LessEqualBase, LessBase, Nan, IsNan,\
     ProductBase, SumBase, QuotientBase, DifferenceBase, Value, Expit, And, Or,\
@@ -8,6 +8,7 @@ from sklearn2code.sym.expression import RealNumber, Log,\
 from six import with_metaclass
 from toolz.functoolz import curry
 from multipledispatch.dispatcher import Dispatcher
+from ..utility import HeritableDispatcherMeta, HeritableDispatcher
 
 class ExpressionTypeNotSupportedError(Exception):
     pass
@@ -19,39 +20,7 @@ def reduction(binary, self, args):
     else:
         return binary(self(args[0]), reduction(binary, self, args[1:]))
 
-class InnerDispatcher(object):
-    def __init__(self, parent, instance):
-        self.parent = parent
-        self.instance = instance
-        
-    def __call__(self, *args):
-        return self.parent.dispatcher(self.instance, *args)
-    
-    def register(self, *types):
-        return self.parent.register(*types)
-
-class HeritableDispatcher(object):
-    def __init__(self, name):
-        self.dispatcher = Dispatcher(name)
-        
-    def register(self, *types):
-        def _register(fun):
-            fun._dispatcher_1f0irrij9 = self
-            fun._dispatch_types_2m20fi4rin = tuple(types)
-            return fun
-        return _register
-    
-    def __get__(self, instance, owner):
-        return InnerDispatcher(self, instance)
-
-class ExpressionPrinterMeta(type):
-    def __init__(self, name, bases, dct):
-        for method in dct.values():
-            if hasattr(method, '_dispatch_types_2m20fi4rin'):
-                method._dispatcher_1f0irrij9.dispatcher.register(self, *method._dispatch_types_2m20fi4rin)(method)
-        return type.__init__(self, name, bases, dct)
-
-class ExpressionPrinter(with_metaclass(ExpressionPrinterMeta, object)):
+class ExpressionPrinter(with_metaclass(HeritableDispatcherMeta, object)):
     __call__ = HeritableDispatcher('__call__')
 
 class BasicOperatorPrinter(ExpressionPrinter):
@@ -119,7 +88,6 @@ class NumpyPrinter(BasicOperatorPrinter):
     @ExpressionPrinter.__call__.register(Or)
     def numpy_print_or(self, expr):
         return reduction(lambda x,y: 'logical_or(%s, %s)' % (x, y), self, expr.args)
-#         return reduction('logical_or', self, expr.args)
     
     @ExpressionPrinter.__call__.register(Not)
     def numpy_print_not(self, expr):

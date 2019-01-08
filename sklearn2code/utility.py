@@ -4,6 +4,40 @@ import numpy as np
 from toolz.functoolz import curry
 from operator import __add__
 from six.moves import reduce
+from multipledispatch.dispatcher import Dispatcher
+
+class InnerDispatcher(object):
+    def __init__(self, parent, instance):
+        self.parent = parent
+        self.instance = instance
+        
+    def __call__(self, *args):
+        return self.parent.dispatcher(self.instance, *args)
+    
+    def register(self, *types):
+        return self.parent.register(*types)
+
+class HeritableDispatcher(object):
+    def __init__(self, name):
+        self.dispatcher = Dispatcher(name)
+        
+    def register(self, *types):
+        def _register(fun):
+            fun._dispatcher_1f0irrij9 = self
+            fun._dispatch_types_2m20fi4rin = tuple(types)
+            return fun
+        return _register
+    
+    def __get__(self, instance, owner):
+        return InnerDispatcher(self, instance)
+
+class HeritableDispatcherMeta(type):
+    def __init__(self, name, bases, dct):
+        for method in dct.values():
+            if hasattr(method, '_dispatch_types_2m20fi4rin'):
+                method._dispatcher_1f0irrij9.dispatcher.register(self, *method._dispatch_types_2m20fi4rin)(method)
+        return type.__init__(self, name, bases, dct)
+
 
 @curry
 def tupsmap(n, fun, tups):
