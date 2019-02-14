@@ -1,19 +1,16 @@
 from xgboost.sklearn import XGBRegressor
 from sklearn.datasets.samples_generator import make_regression
 from pandas.core.frame import DataFrame
-from pyparsing import Literal, Regex, Optional, Word, alphas, OneOrMore, Forward,\
+from pyparsing import Literal, Regex, Word, alphas, OneOrMore, Forward,\
     indentedBlock, Suppress, Group
 from sklearn2code.sym.expression import RealVariable, RealNumber, IsNan,\
     Piecewise, true
 from sklearn2code.sym.base import sym_predict
 from sklearn2code.sym.function import VariableFactory, Function
-from operator import methodcaller, __add__
+from operator import __add__
 from toolz.functoolz import compose
-from toolz.itertoolz import first, last
+from toolz.itertoolz import first
 from six.moves import reduce
-from sklearn2code.sklearn2code import sklearn2code
-from sklearn2code.languages import numpy_flat
-from sklearn2code.utility import exec_module
 
 class Node(object):
     @classmethod
@@ -104,17 +101,4 @@ def sym_predict_xgb_regressor(estimator):
     output = reduce(__add__, map(compose(first, first), calls)) + RealNumber(0.5) # TODO: Why do I have to add 0.5?
     return Function(inputs, calls, (output,))
     
-if __name__ == '__main__':
-    model = XGBRegressor(n_estimators=2, max_depth=1)
-    X, y = make_regression()
-    X = DataFrame(X, columns=['x%d' % i for i in range(X.shape[1])])
-    model.fit(X, y)
-    print(sym_predict(model))
-    code = sklearn2code(model, ['predict'], numpy_flat)
-    print(code)
-    print(model.booster().get_dump()[0])
-    module = exec_module('module', code)
-    print(module.predict(**X.loc[:10,:]))
-    print(model.predict(X.loc[:10,:]))
-    1+1
 

@@ -12,7 +12,7 @@ from networkx.classes.digraph import DiGraph
 import networkx
 from toolz.dicttoolz import merge
 from sklearn2code.utility import tupify, tupsmap, tupfun, tupget
-from sklearn2code.sym.expression import Variable, RealVariable
+from sklearn2code.sym.expression import Variable, RealVariable, Integer
 import re
 from networkx.algorithms.operators.all import compose_all
 
@@ -39,10 +39,10 @@ class VariableFactory(object):
         result += 1
         return result
     
-    def __call__(self):
+    def __call__(self, variable_type=RealVariable):
         result = self.base + str(self.current_n)
         self.current_n += 1
-        return RealVariable(result)
+        return variable_type(result)
 
 class VariableNameFactory(VariableFactory):
     def __call__(self):
@@ -83,7 +83,7 @@ class Function(object):
         inputs : tuple of Variables
             The input variables for this function.
         
-        calls : tuple of pairs with (tuples of Variables, pairs of Function objects and tuples of their inputs)
+        calls : tuple of pairs of form (tuple of Variables, pair of Function object and tuple of its inputs)
             The values are other function calls made by this function.  The keys are 
             variables to which the outputs are assigned.  The number of output variables in the
             key must match the number of outputs in the Function.  The length of the tuple of inputs must match the
@@ -268,8 +268,16 @@ class Function(object):
                     raise ValueError('Assigned to already used symbolic variable: %s' % str(sym))
                 sym_set.add(sym)
             if len(syms) != len(function.outputs):
-                raise ValueError('Output size of function does not match number of assigned variables: %d != %d' 
-                                 % (len(syms), len(function.outputs)))
+                # Check whether unpacking is possible
+                unpackable = False
+                if len(function.outputs) == 1:
+                    output = function.outputs[0]
+                    if isinstance(output.dim, Integer):
+                        if output.dim.value == len(syms):
+                            unpackable = True
+                if not unpackable:
+                    raise ValueError('Output size of function does not match number of assigned variables: %d != %d' 
+                                     % (len(syms), len(function.outputs)))
             if len(inputs) != len(function.inputs):
                 raise ValueError('Input size of function does not match number of inputs: %d != %d'
                                  % (len(inputs, len(function.inputs))))

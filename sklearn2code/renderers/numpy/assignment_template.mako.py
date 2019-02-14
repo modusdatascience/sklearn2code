@@ -1,0 +1,1 @@
+${', '.join(map(str, lhs))} = ${called_function_name}({${', '.join(map(lambda x: '"%s": %s' % (str(x[0]), str(x[1])), zip(inputs, arguments)))}})

@@ -5,6 +5,38 @@ from toolz.functoolz import curry
 from operator import __add__
 from six.moves import reduce
 from multipledispatch.dispatcher import Dispatcher
+import importlib
+import pkgutil
+
+# https://stackoverflow.com/a/25562415/1572508
+def import_submodules(package, recursive=True, ignore_import_errors=True):
+    """ 
+    Import all submodules of a module, recursively, including subpackages.
+    
+    Parameters
+    ----------
+    
+    package (str or types.ModuleType): Package name or actual module.
+    
+    recursive (bool): Whether or not to recursively import from subpackages.
+    
+    ignore_import_errors (bool): Whether or not to ignor ImportErrors in imported modules.  Set to 
+        True if importing modules that are optional and rely on optional dependencies.
+        
+    """
+    if isinstance(package, str):
+        package = importlib.import_module(package)
+    results = {}
+    for loader, name, is_pkg in pkgutil.walk_packages(package.__path__):
+        full_name = package.__name__ + '.' + name
+        try:
+            results[full_name] = importlib.import_module(full_name)
+        except ImportError:
+            if not ignore_import_errors:
+                raise
+        if recursive and is_pkg:
+            results.update(import_submodules(full_name))
+    return results
 
 class InnerDispatcher(object):
     def __init__(self, parent, instance):

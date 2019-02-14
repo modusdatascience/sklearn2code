@@ -185,8 +185,8 @@ estimator : A scikit-learn or other compatible fitted estimator.
 
 Returns
 -------
-tuple of Symbols
-    The input symbols estimator.
+tuple of Variables
+    The input variables of estimator.
 
 Raises
 ------

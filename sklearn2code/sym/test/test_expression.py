@@ -1,8 +1,10 @@
 from sklearn2code.sym.expression import true, RealVariable,\
-    Piecewise, RealPiecewise, Log, Max, MaxReal, VectorExpression, RealNumber,\
+    Piecewise, RealPiecewise, Log, Max, MaxReal, RealNumber,\
     Vector, Integer, Ordered, OrderedReal
 from nose.tools import assert_equal, assert_is_instance
 from sklearn2code.sym.printers import NumpyPrinter
+from operator import __add__, __truediv__
+from toolz.functoolz import flip, curry
 
 
 def test_piecewise():
@@ -43,7 +45,27 @@ def test_ordered():
     assert_equal(ordered[Integer(1)], OrderedReal.Component(ordered, Integer(1)))
     assert_equal(ordered.sum(), x+y)
     assert_equal(ordered.dim, Integer(2))
+
+def test_vector_add():
+    x = RealVariable('x')
+    y = RealVariable('y')
+    vector = Vector(x,y)
+    assert_equal(vector + RealNumber(1), Vector(*map(flip(__add__)(RealNumber(1)), vector.args)))
+    assert_equal(RealNumber(1) + vector, Vector(*map(curry(__add__)(RealNumber(1)), vector.args)))
+    vector2 = Vector(RealNumber(1.), RealNumber(1.))
+    assert_equal(vector + vector2, vector + RealNumber(1))
+    assert_equal(vector2 + vector, RealNumber(1) + vector)
     
+def test_vector_truediv():
+    x = RealVariable('x')
+    y = RealVariable('y')
+    vector = Vector(x,y)
+    assert_equal(vector / RealNumber(1), Vector(*map(flip(__truediv__)(RealNumber(1)), vector.args)))
+    assert_equal(RealNumber(1) / vector, Vector(*map(curry(__truediv__)(RealNumber(1)), vector.args)))
+    vector2 = Vector(RealNumber(1.), RealNumber(1.))
+    assert_equal(vector / vector2, vector / RealNumber(1))
+    assert_equal(vector2 / vector, RealNumber(1) / vector)
+     
 # def test_vector_expression():
 #     x = RealVariable('x')
 #     v1 = VectorExpression(RealNumber(1), x)

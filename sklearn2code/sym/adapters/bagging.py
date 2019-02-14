@@ -22,7 +22,9 @@ def sym_predict_proba_bagging_classifier(estimator):
     inputs = syms(estimator)
     Var = VariableFactory(existing=inputs)
     vars_ = tuple(Var() for _ in range(len(estimator.estimators_)))
-    calls = tuple(starmap(lambda var, est, args: ((var,), (sym_predict_proba(est) if hasattr(est, 'predict_proba') else sym_predict(est), tuple(map(curry(__getitem__)(inputs), list(args))))), 
+    calls = tuple(starmap(lambda var, est, args: ((var,), 
+                      (sym_predict_proba(est) if hasattr(est, 'predict_proba') 
+                           else sym_predict(est), tuple(map(curry(__getitem__)(inputs), list(args))))), 
                 zip(vars_, estimator.estimators_, estimator.estimators_features_)))
     outputs = (reduce(__add__, vars_) / RealNumber(len(estimator.estimators_)),)
     return Function(inputs, calls, outputs)
