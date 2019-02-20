@@ -93,11 +93,11 @@ test_cases = [
 #             ['transform'], create_weird_classification_problem_1()),
 #             (RandomForestRegressor(), ['predict'], create_regression_problem_1()),
 #             (CalibratedClassifierCV(LogisticRegression(), 'isotonic'), ['predict_proba'], create_weird_classification_problem_1()),
-#             (AdaBoostRegressor(), ['predict'], create_regression_problem_1()),
-#             (BaggingRegressor(), ['predict'], create_regression_problem_1()),
+            (AdaBoostRegressor(), ['predict'], create_regression_problem_1()),
+            (BaggingRegressor(), ['predict'], create_regression_problem_1()),
             (BaggingClassifier(), ['predict_proba'], create_weird_classification_problem_1()),
 #             (GradientBoostingRegressor(verbose=True), ['predict'], create_regression_problem_1(m=100000, n=200)),
-#             (XGBRegressor(), ['predict'], create_regression_problem_for_xgb_1())
+            (XGBRegressor(), ['predict'], create_regression_problem_for_xgb_1())
               ]
  
  

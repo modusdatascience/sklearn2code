@@ -1010,6 +1010,9 @@ class Statistic(Expression):
         self.data = tuple(data)
         self.outtype = get_common_type(map(type, data))
     
+    def varfactory(self):
+        return self.outtype.varfactory()
+    
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return NotImplemented
