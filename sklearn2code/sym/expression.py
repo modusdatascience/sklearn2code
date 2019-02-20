@@ -1,15 +1,14 @@
 from toolz.functoolz import flip, compose, curry
-from functools import singledispatch
+from functools import singledispatch, partial
 from sklearn2code.utility import tupfun
-from operator import methodcaller, __or__, __invert__, __eq__, __neg__,\
-    __truediv__
+from operator import methodcaller, __or__
 from multipledispatch.dispatcher import Dispatcher
-from six.moves import reduce
+from six.moves import reduce  # @UnresolvedImport
 from six import with_metaclass
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 from frozendict import frozendict
 from toolz.curried import itemmap
-from itertools import chain, starmap
+from itertools import chain
 
 def undefined(*args):
     raise NotImplementedError()
@@ -74,6 +73,10 @@ class Expression(with_metaclass(ABCMeta, object)):
     def __hash__(self):
         raise NotImplementedError()
     
+    @abstractmethod
+    def varfactory(self):
+        raise NotImplementedError()
+    
     @property
     def e(self):
         return Equaler(self)
@@ -121,6 +124,7 @@ class BinaryFunction(Expression):
     
 class NaryFunction(Expression):
     def __init__(self, *args):
+        super(NaryFunction, self).__init__(*args)
         self.args = tuple(args)
     
     def subs(self, varmap):
@@ -202,6 +206,9 @@ class BooleanExpression(Expression):
         if not isinstance(other, BooleanExpression):
             return NotImplemented
         return Not(self, other)
+    
+    def varfactory(self):
+        return BooleanVariable
 
 class NumberExpression(Expression):
     def __gt__(self, other):
@@ -248,13 +255,16 @@ class NumberExpression(Expression):
         return Negate(self)
 
 class RealNumberExpression(NumberExpression):
-    pass
+    def varfactory(self):
+        return RealVariable
 
 class IntegerExpression(NumberExpression):
-    pass
+    def varfactory(self):
+        return IntegerVariable
 
 class StringExpression(Expression):
-    pass
+    def varfactory(self):
+        return StringVariable
 
 class RealPiecewise(RealNumberExpression, PiecewiseBase):
     outtype = RealNumberExpression
@@ -272,6 +282,8 @@ def Piecewise(*args):
         return BoolPiecewise(*args)
     elif isinstance(args[0][0], IntegerExpression):
         return IntegerPiecewise(*args)
+    elif isinstance(args[0][0], TupleExpression):
+        return TuplePiecewise(*args)
     else:
         raise TypeError
  
@@ -288,166 +300,163 @@ class Constant(Expression):
     
     def subs(self, varmap):
         return self
-
-class VectorExpression(Expression):
-    class Component(Expression):
-        def __init__(self, vector, index):
-            self.vector = vector
-            self.index = index
-            if not isinstance(self.index, IntegerExpression):
-                raise TypeError('Component index must be IntegerExpression.')
-            if not isinstance(self.vector, VectorExpression):
-                raise TypeError('Component vector must be VectorExpression')
-    
-        def __str__(self):
-            return str(self.vector) + ('[%d]' % self.index)
-        
-        def __repr__(self):
-            return repr(self.vector) + ('[%d]' % self.index)
-        
-        def __eq__(self, other):
-            return type(self) is type(other) and self.index == other.index and self.vector == other.vector
-        
-        def __hash__(self):
-            return hash((self.vector, self.index))
-        
-        @property
-        def free_symbols(self):
-            return self.vector.free_symbols | self.index.free_symbols
-        
-        def subs(self, varmap):
-            return type(self)(self.vector.subs(varmap), self.index.subs(varmap))
-    
-    @abstractproperty
-    def dim(self):
-        pass
-    
-    def __iter__(self):
-        try:
-            for i in range(self.dim.value):
-                yield self[Integer(i)]
-        except:
-            for i in range(self.dim.value):
-                yield self[Integer(i)]
-    
-    @abstractmethod
-    def __getitem__(self, index):
-        pass
-    
-    def __add__(self, other):
-        if isinstance(other, NumberExpression):
-            return Vector(*[component + other for component in self])
-        if not isinstance(other, VectorExpression):
-            return NotImplemented
-        if self.dim != other.dim:
-            raise ValueError('Can\'t add VectorExpressions of different dimensions.')
-        return Vector(*[x + y for x, y in zip(self, other)])
-    
-    def __radd__(self, other):
-        if isinstance(other, NumberExpression):
-            return Vector(*[other + component for component in self])
-        if not isinstance(other, VectorExpression):
-            return NotImplemented
-        if self.dim != other.dim:
-            raise ValueError('Can\'t add VectorExpressions of different dimensions.')
-        return Vector(*[y + x for x, y in zip(self, other)])
-    
-    def __sub__(self, other):
-        if isinstance(other, NumberExpression):
-            return Vector(*[component - other for component in self])
-        if not isinstance(other, VectorExpression):
-            return NotImplemented
-        if self.dim != other.dim:
-            raise ValueError('Can\'t subtract VectorExpressions of different dimensions.')
-        return Vector(*[x - y for x, y in zip(self, other)])
-    
-    def __rsub__(self, other):
-        if isinstance(other, NumberExpression):
-            return Vector(*[other - component for component in self])
-        if not isinstance(other, VectorExpression):
-            return NotImplemented
-        if self.dim != other.dim:
-            raise ValueError('Can\'t subtract VectorExpressions of different dimensions.')
-        return Vector(*[y - x for x, y in zip(self, other)])
-    
-    def __mul__(self, other):
-        if isinstance(other, NumberExpression):
-            return Vector(*[component * other for component in self])
-        if not isinstance(other, VectorExpression):
-            return NotImplemented
-        if self.dim != other.dim:
-            raise ValueError('Can\'t multiply VectorExpressions of different dimensions.')
-        return Vector(*[x * y for x, y in zip(self, other)])
-    
-    def __rmul__(self, other):
-        if isinstance(other, NumberExpression):
-            return Vector(*[other * component for component in self])
-        if not isinstance(other, VectorExpression):
-            return NotImplemented
-        if self.dim != other.dim:
-            raise ValueError('Can\'t multiply VectorExpressions of different dimensions.')
-        return Vector(*[y * x for x, y in zip(self, other)])
-    
-    def __truediv__(self, other):
-        if isinstance(other, NumberExpression):
-            return Vector(*[__truediv__(component, other) for component in self])
-        if not isinstance(other, VectorExpression):
-            return NotImplemented
-        if self.dim != other.dim:
-            raise ValueError('Can\'t divide VectorExpressions of different dimensions.')
-        return Vector(*[__truediv__(x, y) for x, y in zip(self, other)])
-    
-    def __rtruediv__(self, other):
-        if isinstance(other, NumberExpression):
-            return Vector(*[__truediv__(other, component) for component in self])
-        if not isinstance(other, VectorExpression):
-            return NotImplemented
-        if self.dim != other.dim:
-            raise ValueError('Can\'t divide VectorExpressions of different dimensions.')
-        return Vector(*[__truediv__(y, x) for x, y in zip(self, other)])
-    
-    
-    def __and__(self, other):
-        if isinstance(other, NumberExpression):
-            return Vector(*[component & other for component in self])
-        if not isinstance(other, VectorExpression):
-            return NotImplemented
-        if self.dim != other.dim:
-            raise ValueError('Can\'t & VectorExpressions of different dimensions.')
-        return Vector(*[x & y for x, y in zip(self, other)])
-    
-    def __rand__(self, other):
-        if isinstance(other, NumberExpression):
-            return Vector(*[other & component for component in self])
-        if not isinstance(other, VectorExpression):
-            return NotImplemented
-        if self.dim != other.dim:
-            raise ValueError('Can\'t & VectorExpressions of different dimensions.')
-        return Vector(*[y & x for x, y in zip(self, other)])
-    
-    def __or__(self, other):
-        if isinstance(other, NumberExpression):
-            return Vector(*[component | other for component in self])
-        if not isinstance(other, VectorExpression):
-            return NotImplemented
-        if self.dim != other.dim:
-            raise ValueError('Can\'t | VectorExpressions of different dimensions.')
-        return Vector(*[x | y for x, y in zip(self, other)])
-    
-    def __ror__(self, other):
-        if isinstance(other, NumberExpression):
-            return Vector(*[other | component for component in self])
-        if not isinstance(other, VectorExpression):
-            return NotImplemented
-        if self.dim != other.dim:
-            raise ValueError('Can\'t | VectorExpressions of different dimensions.')
-        return Vector(*[y | x for x, y in zip(self, other)])
-    
-    def __invert__(self):
-        return Vector(*map(__invert__, self))
-    
-    def __neg__(self):
-        return Vector(*map(__neg__, self))
+# 
+# class VectorExpression(Expression):
+#     class Component(Expression):
+#         def __init__(self, vector, index):
+#             self.vector = vector
+#             self.index = index
+#             if not isinstance(self.index, IntegerExpression):
+#                 raise TypeError('Component index must be IntegerExpression.')
+#             if not isinstance(self.vector, VectorExpression):
+#                 raise TypeError('Component vector must be VectorExpression')
+#     
+#         def __str__(self):
+#             return str(self.vector) + ('[%d]' % self.index)
+#         
+#         def __repr__(self):
+#             return repr(self.vector) + ('[%d]' % self.index)
+#         
+#         def __eq__(self, other):
+#             return type(self) is type(other) and self.index == other.index and self.vector == other.vector
+#         
+#         def __hash__(self):
+#             return hash((self.vector, self.index))
+#         
+#         @property
+#         def free_symbols(self):
+#             return self.vector.free_symbols | self.index.free_symbols
+#         
+#         def subs(self, varmap):
+#             return type(self)(self.vector.subs(varmap), self.index.subs(varmap))
+#     
+#     def __init__(self, dim):
+#         self.dim = int(dim)
+#         if self.dim != dim:
+#             raise ValueError('dim must be an integer.')
+#     
+#     def __iter__(self):
+#         for i in range(self.dim):
+#             yield self[Integer(i)]
+#     
+#     @abstractmethod
+#     def __getitem__(self, index):
+#         pass
+#     
+#     def __add__(self, other):
+#         if isinstance(other, NumberExpression):
+#             return Vector(*[component + other for component in self])
+#         if not isinstance(other, VectorExpression):
+#             return NotImplemented
+#         if self.dim != other.dim:
+#             raise ValueError('Can\'t add VectorExpressions of different dimensions.')
+#         return Vector(*[x + y for x, y in zip(self, other)])
+#     
+#     def __radd__(self, other):
+#         if isinstance(other, NumberExpression):
+#             return Vector(*[other + component for component in self])
+#         if not isinstance(other, VectorExpression):
+#             return NotImplemented
+#         if self.dim != other.dim:
+#             raise ValueError('Can\'t add VectorExpressions of different dimensions.')
+#         return Vector(*[y + x for x, y in zip(self, other)])
+#     
+#     def __sub__(self, other):
+#         if isinstance(other, NumberExpression):
+#             return Vector(*[component - other for component in self])
+#         if not isinstance(other, VectorExpression):
+#             return NotImplemented
+#         if self.dim != other.dim:
+#             raise ValueError('Can\'t subtract VectorExpressions of different dimensions.')
+#         return Vector(*[x - y for x, y in zip(self, other)])
+#     
+#     def __rsub__(self, other):
+#         if isinstance(other, NumberExpression):
+#             return Vector(*[other - component for component in self])
+#         if not isinstance(other, VectorExpression):
+#             return NotImplemented
+#         if self.dim != other.dim:
+#             raise ValueError('Can\'t subtract VectorExpressions of different dimensions.')
+#         return Vector(*[y - x for x, y in zip(self, other)])
+#     
+#     def __mul__(self, other):
+#         if isinstance(other, NumberExpression):
+#             return Vector(*[component * other for component in self])
+#         if not isinstance(other, VectorExpression):
+#             return NotImplemented
+#         if self.dim != other.dim:
+#             raise ValueError('Can\'t multiply VectorExpressions of different dimensions.')
+#         return Vector(*[x * y for x, y in zip(self, other)])
+#     
+#     def __rmul__(self, other):
+#         if isinstance(other, NumberExpression):
+#             return Vector(*[other * component for component in self])
+#         if not isinstance(other, VectorExpression):
+#             return NotImplemented
+#         if self.dim != other.dim:
+#             raise ValueError('Can\'t multiply VectorExpressions of different dimensions.')
+#         return Vector(*[y * x for x, y in zip(self, other)])
+#     
+#     def __truediv__(self, other):
+#         if isinstance(other, NumberExpression):
+#             return Vector(*[__truediv__(component, other) for component in self])
+#         if not isinstance(other, VectorExpression):
+#             return NotImplemented
+#         if self.dim != other.dim:
+#             raise ValueError('Can\'t divide VectorExpressions of different dimensions.')
+#         return Vector(*[__truediv__(x, y) for x, y in zip(self, other)])
+#     
+#     def __rtruediv__(self, other):
+#         if isinstance(other, NumberExpression):
+#             return Vector(*[__truediv__(other, component) for component in self])
+#         if not isinstance(other, VectorExpression):
+#             return NotImplemented
+#         if self.dim != other.dim:
+#             raise ValueError('Can\'t divide VectorExpressions of different dimensions.')
+#         return Vector(*[__truediv__(y, x) for x, y in zip(self, other)])
+#     
+#     
+#     def __and__(self, other):
+#         if isinstance(other, NumberExpression):
+#             return Vector(*[component & other for component in self])
+#         if not isinstance(other, VectorExpression):
+#             return NotImplemented
+#         if self.dim != other.dim:
+#             raise ValueError('Can\'t & VectorExpressions of different dimensions.')
+#         return Vector(*[x & y for x, y in zip(self, other)])
+#     
+#     def __rand__(self, other):
+#         if isinstance(other, NumberExpression):
+#             return Vector(*[other & component for component in self])
+#         if not isinstance(other, VectorExpression):
+#             return NotImplemented
+#         if self.dim != other.dim:
+#             raise ValueError('Can\'t & VectorExpressions of different dimensions.')
+#         return Vector(*[y & x for x, y in zip(self, other)])
+#     
+#     def __or__(self, other):
+#         if isinstance(other, NumberExpression):
+#             return Vector(*[component | other for component in self])
+#         if not isinstance(other, VectorExpression):
+#             return NotImplemented
+#         if self.dim != other.dim:
+#             raise ValueError('Can\'t | VectorExpressions of different dimensions.')
+#         return Vector(*[x | y for x, y in zip(self, other)])
+#     
+#     def __ror__(self, other):
+#         if isinstance(other, NumberExpression):
+#             return Vector(*[other | component for component in self])
+#         if not isinstance(other, VectorExpression):
+#             return NotImplemented
+#         if self.dim != other.dim:
+#             raise ValueError('Can\'t | VectorExpressions of different dimensions.')
+#         return Vector(*[y | x for x, y in zip(self, other)])
+#     
+#     def __invert__(self):
+#         return Vector(*map(__invert__, self))
+#     
+#     def __neg__(self):
+#         return Vector(*map(__neg__, self))
 
 
 
@@ -470,158 +479,168 @@ class FunctionOfNumber(FunctionOfType):
     argtype = NumberExpression
 
 
+# 
+# class VectorNary(NaryFunction, VectorExpression):
+#     '''
+#     A vector-valued n-ary function.
+#     '''
+#     def __init__(self, *args):
+#         NaryFunction.__init__(self, *args)
+#         dim = len(self.args)
+#         VectorExpression.__init__(self, dim)
+# #     @property
+# #     def dim(self):
+# #         return Integer(len(self.args))
+#     
+#     def __eq__(self, other):
+#         return self.__class__ is other.__class__ and all(starmap(__eq__, zip(self.args, other.args)))
+#     
+#     def __hash__(self):
+#         return hash((self.__class__,) + tuple(map(hash, self.args)))
+#     
+#     @property
+#     def free_symbols(self):
+#         return reduce(__or__, map(flip(getattr)('free_symbols'), self.args), set())
+#     
+#     def subs(self, varmap):
+#         return self.__class__(*map(methodcaller('subs', varmap), self.args))
+#     
+#     def sum(self):
+#         return Sum(*(self.args))
+#     
+#     def product(self):
+#         return Product(*(self.args))
+# 
+# class VectorExpressionReal(VectorExpression):
+#     class Component(RealNumberExpression, VectorExpression.Component):
+#         pass
+# 
+# class VectorExpressionInt(VectorExpression):
+#     class Component(IntegerExpression, VectorExpression.Component):
+#         pass
+#     
+# class VectorExpressionBool(VectorExpression):
+#     class Component(BooleanExpression, VectorExpression.Component):
+#         pass
+# 
+# 
+# class FunctionOfVectors(FunctionOfType):
+#     argtype = VectorExpression
+# 
+# class FunctionOfRealVectors(FunctionOfType):
+#     argtype = VectorExpressionReal
+#     
+# class FunctionOfIntVectors(FunctionOfType):
+#     argtype = VectorExpressionInt
+# 
+# class FunctionOfBoolVectors(FunctionOfType):
+#     argtype = VectorExpressionBool
 
-class VectorNary(NaryFunction, VectorExpression):
-    @property
-    def dim(self):
-        return Integer(len(self.args))
-    
-    def __eq__(self, other):
-        return self.__class__ is other.__class__ and all(starmap(__eq__, zip(self.args, other.args)))
-    
-    def __hash__(self):
-        return hash((self.__class__,) + tuple(map(hash, self.args)))
-    
-    @property
-    def free_symbols(self):
-        return reduce(__or__, map(flip(getattr)('free_symbols'), self.args), set())
-    
-    def subs(self, varmap):
-        return self.__class__(*map(methodcaller('subs', varmap), self.args))
-    
-    def sum(self):
-        return Sum(*(self.args))
-    
-    def product(self):
-        return Product(*(self.args))
+# class Dim(IntegerExpression, UnaryFunction, FunctionOfVectors):
+#     pass
+# 
+# # TODO: Clean up the types
+# class VectorSum(UnaryFunction, FunctionOfVectors):
+#     pass
+# 
+# 
+# class VectorExpressionOfReal(VectorExpressionReal, VectorNary, FunctionOfReals):
+#     class Component(VectorExpressionReal.Component):
+#         pass
+# 
+# class VectorExpressionOfInt(VectorExpressionInt, VectorNary, FunctionOfInts):
+#     class Component(VectorExpressionInt.Component):
+#         pass
+#     
+# class VectorExpressionOfBool(VectorExpressionBool, VectorNary, FunctionOfBools):
+#     class Component(VectorExpressionBool.Component):
+#         pass
+# 
+# class VectorBase(VectorExpression):
+#     class Component(VectorExpression.Component):
+#         pass
+#     
+#     def __getitem__(self, index):
+#         if not isinstance(index, IntegerExpression):
+#             raise TypeError('Vector index must be IntegerExpression.')
+#         if isinstance(index, Integer):
+#             return self.args[index.value]
+#         return self.__class__.Component(self, index)
+#     
+#     def __str__(self):
+#         return 'Vector(%s)' % (', '.join(map(str, self.args)))
+#     
+#     def __repr__(self):
+#         return 'Vector(%s)' % (', '.join(map(repr, self.args)))
+# 
+# class VectorReal(VectorBase, VectorExpressionOfReal):
+#     class Component(VectorExpressionReal.Component):
+#         pass
+# 
+# class VectorInt(VectorBase, VectorExpressionOfInt):
+#     class Component(VectorExpressionInt.Component):
+#         pass
+#     
+# class VectorBool(VectorBase, VectorExpressionOfBool):
+#     class Component(VectorExpressionBool.Component):
+#         pass
+# 
+# Vector = dispatch('Vector')
+# Vector.register(RealNumberExpression)(VectorReal)
+# Vector.register(IntegerExpression)(VectorInt)
+# Vector.register(BooleanExpression)(VectorBool)
+# 
+# class OrderedBase(VectorNary):
+#     class Component(VectorExpression.Component):
+#         pass
+#     
+#     
+#     
+#     def __str__(self):
+#         return 'Ordered(%s)' % (', '.join(map(str, self.args)))
+#     
+#     def __repr__(self):
+#         return 'Ordered(%s)' % (', '.join(map(repr, self.args)))
+#     
+#     def __getitem__(self, index):
+#         return self.__class__.Component(self, index)
+# 
+# class OrderedReal(OrderedBase, VectorExpressionOfReal):
+#     class Component(VectorExpressionOfReal.Component):
+#         pass
+# 
+# class OrderedInt(OrderedBase, VectorExpressionOfInt):
+#     class Component(VectorExpressionOfInt.Component):
+#         pass
+# 
+# Ordered = dispatch('Ordered')
+# Ordered.register(RealNumberExpression)(OrderedReal)
+# Ordered.register(IntegerExpression)(OrderedInt)
+#     
+# class VectorVariable(VectorExpression, Variable):
+#     def __getitem__(self, index):
+#         return self.__class__.Component(self, index)
+#     
+#     def __init__(self, name, dim):
+#         VectorExpression.__init__(self, dim)
+#         Variable.__init__(self, name)
+#         
+# class RealVectorVariable(VectorVariable, VectorExpressionReal):
+#     class Component(VectorExpressionReal.Component):
+#         pass
+# 
+# class IntVectorVariable(VectorVariable, VectorExpressionInt):
+#     class Component(VectorExpressionInt.Component):
+#         pass
+# 
+# class BoolVectorVariable(VectorVariable, VectorExpressionBool):
+#     class Component(VectorExpressionBool.Component):
+#         pass
 
-class VectorExpressionReal(VectorExpression):
-    class Component(RealNumberExpression, VectorExpression.Component):
-        pass
+# class ScalarVariable(NumberExpression, Variable):
+#     pass
 
-class VectorExpressionInt(VectorExpression):
-    class Component(IntegerExpression, VectorExpression.Component):
-        pass
-    
-class VectorExpressionBool(VectorExpression):
-    class Component(BooleanExpression, VectorExpression.Component):
-        pass
-
-
-class FunctionOfVectors(FunctionOfType):
-    argtype = VectorExpression
-
-class FunctionOfRealVectors(FunctionOfType):
-    argtype = VectorExpressionReal
-    
-class FunctionOfIntVectors(FunctionOfType):
-    argtype = VectorExpressionInt
-
-class FunctionOfBoolVectors(FunctionOfType):
-    argtype = VectorExpressionBool
-
-class Dim(IntegerExpression, UnaryFunction, FunctionOfVectors):
-    pass
-
-# TODO: Clean up the types
-class VectorSum(UnaryFunction, FunctionOfVectors):
-    pass
-
-
-class VectorExpressionOfReal(VectorExpressionReal, VectorNary, FunctionOfReals):
-    class Component(VectorExpressionReal.Component):
-        pass
-
-class VectorExpressionOfInt(VectorExpressionInt, VectorNary, FunctionOfInts):
-    class Component(VectorExpressionInt.Component):
-        pass
-    
-class VectorExpressionOfBool(VectorExpressionBool, VectorNary, FunctionOfBools):
-    class Component(VectorExpressionBool.Component):
-        pass
-
-class VectorBase(VectorExpression):
-    class Component(VectorExpression.Component):
-        pass
-    
-    def __getitem__(self, index):
-        if not isinstance(index, IntegerExpression):
-            raise TypeError('Vector index must be IntegerExpression.')
-        if isinstance(index, Integer):
-            return self.args[index.value]
-        return self.__class__.Component(self, index)
-    
-    def __str__(self):
-        return 'Vector(%s)' % (', '.join(map(str, self.args)))
-    
-    def __repr__(self):
-        return 'Vector(%s)' % (', '.join(map(repr, self.args)))
-
-class VectorReal(VectorBase, VectorExpressionOfReal):
-    class Component(VectorExpressionReal.Component):
-        pass
-
-class VectorInt(VectorBase, VectorExpressionOfInt):
-    class Component(VectorExpressionInt.Component):
-        pass
-    
-class VectorBool(VectorBase, VectorExpressionOfBool):
-    class Component(VectorExpressionBool.Component):
-        pass
-
-Vector = dispatch('Vector')
-Vector.register(RealNumberExpression)(VectorReal)
-Vector.register(IntegerExpression)(VectorInt)
-Vector.register(BooleanExpression)(VectorBool)
-
-class OrderedBase(VectorExpression):
-    class Component(VectorExpression.Component):
-        pass
-    
-    def __str__(self):
-        return 'Ordered(%s)' % (', '.join(map(str, self.args)))
-    
-    def __repr__(self):
-        return 'Ordered(%s)' % (', '.join(map(repr, self.args)))
-    
-    def __getitem__(self, index):
-        return self.__class__.Component(self, index)
-
-class OrderedReal(OrderedBase, VectorExpressionOfReal):
-    class Component(VectorExpressionOfReal.Component):
-        pass
-
-class OrderedInt(OrderedBase, VectorExpressionOfInt):
-    class Component(VectorExpressionOfInt.Component):
-        pass
-
-Ordered = dispatch('Ordered')
-Ordered.register(RealNumberExpression)(OrderedReal)
-Ordered.register(IntegerExpression)(OrderedInt)
-    
-class VectorVariable(VectorExpression, Variable):
-    def __getitem__(self, index):
-        return self.__class__.Component(self, index)
-    
-    def dim(self):
-        return Dim(self)
-
-class RealVectorVariable(VectorVariable, VectorExpressionReal):
-    class Component(VectorExpressionReal.Component):
-        pass
-
-class IntVectorVariable(VectorVariable, VectorExpressionInt):
-    class Component(VectorExpressionInt.Component):
-        pass
-
-class BoolVectorVariable(VectorVariable, VectorExpressionBool):
-    class Component(VectorExpressionBool.Component):
-        pass
-
-class ScalarVariable(NumberExpression, Variable):
-    pass
-
-class RealVariable(RealNumberExpression, ScalarVariable):
+class RealVariable(RealNumberExpression, Variable):
     pass
 
 class Value(Constant):
@@ -650,7 +669,7 @@ class IsNan(BooleanExpression, UnaryFunction, FunctionOfReals):
     def __str__(self):
         return 'IsNan(%s)' % str(self.arg)
 
-class StringVariable(StringExpression, ScalarVariable):
+class StringVariable(StringExpression, Variable):
     pass
 
 class String(StringExpression, Value):
@@ -659,7 +678,7 @@ class String(StringExpression, Value):
             raise TypeError('String value must be str.')
         self.value = str(value)
 
-class IntegerVariable(IntegerExpression, ScalarVariable):
+class IntegerVariable(IntegerExpression, Variable):
     pass
 
 class Integer(IntegerExpression, Value):
@@ -770,7 +789,7 @@ class SumInt(IntegerExpression, SumBase, FunctionOfInts):
 Sum = dispatch('Sum')
 Sum.register(RealNumberExpression)(SumReal)
 Sum.register(IntegerExpression)(SumInt)
-Sum.register(VectorExpression)(methodcaller('sum'))
+# Sum.register(VectorExpression)(methodcaller('sum'))
 
 class DifferenceBase(NumberExpression, BinaryFunction):
     def __str__(self):
@@ -807,7 +826,7 @@ class ProductInt(IntegerExpression, ProductBase, FunctionOfInts):
 Product = dispatch('Product')
 Product.register(RealNumberExpression)(ProductReal)
 Product.register(IntegerExpression)(ProductInt)
-Product.register(VectorExpression)(methodcaller('product'))
+# Product.register(VectorExpression)(methodcaller('product'))
 
 class PowerBase(NumberExpression, BinaryFunction):
     def __str__(self):
@@ -1051,6 +1070,143 @@ class WeightedMode(WeightedStatistic):
 class WeightedMedian(WeightedStatistic):
     pass
 
+class TupleExpression(Expression):
+    '''
+    The dim of a tuple must be known at compile time.
+    '''
+    def __init__(self, dim):
+        self.dim = int(dim)
+        if self.dim != dim:
+            raise ValueError('The dim must be an integer.')
+    
+    def __add__(self, other):
+        if not isinstance(other, TupleExpression):
+            return NotImplemented
+        if isinstance(other, TupleSum):
+            return other.__radd__(self)
+        return TupleSum(self, other)
+    
+    def __radd__(self, other):
+        if not isinstance(other, TupleExpression):
+            return NotImplemented
+        return TupleSum(self, other)
+    
+    def __mul__(self, other):
+        if isinstance(other, NumberExpression):
+            return ScalarMultiply(self, other)
+        else:
+            return NotImplemented
+    
+    def __rmul__(self, other):
+        return self.__mul__(other)
+    
+    def __truediv__(self, other):
+        if isinstance(other, NumberExpression):
+            return ScalarMultiply(self, RealNumber(1) / other)
+        else:
+            return NotImplemented
+    
+    def varfactory(self):
+        return partial(TupleVariable, dim=self.dim)
+    
+class Tuple(TupleExpression, NaryFunction, FunctionOfNumber):
+    def __init__(self, *args):
+        TupleExpression.__init__(self, len(args))
+        NaryFunction.__init__(self, *args)
+
+class FunctionOfTuples(FunctionOfType):
+    argtype = TupleExpression
+
+class Total(UnaryFunction, FunctionOfTuples):
+    pass
+
+class NaryTupleFunction(TupleExpression, NaryFunction, FunctionOfTuples):
+    def __init__(self, *args):
+        NaryFunction.__init__(self, *args)
+        if len(set(map(flip(getattr)('dim'), self.args))) > 1:
+            raise ValueError('All arguments must have the same dim.')
+        
+class TupleSum(NaryTupleFunction):
+    def __add__(self, other):
+        if not isinstance(other, TupleExpression):
+            return NotImplemented
+        if isinstance(other, TupleSum):
+            return TupleSum(*(self.args + other.args))
+        else:
+            return TupleSum(*(self.args + (other,)))
+    
+    def __radd__(self, other):
+        if not isinstance(other, TupleExpression):
+            return NotImplemented
+        if isinstance(other, TupleSum):
+            return TupleSum(*(other.args + self.args))
+        else:
+            return TupleSum(*((other,) + self.args))
+
+class ScalarTupleOp(TupleExpression):
+    def __init__(self, tup, scalar):
+        self.tup = tup
+        self.scalar = scalar
+        if not isinstance(self.tup, TupleExpression):
+            raise TypeError('tup must be a TupleExpression.')
+        if not isinstance(self.scalar, NumberExpression):
+            raise TypeError('scalar must be a NumberExpression.')
+    
+    def subs(self, varmap):
+        self.tup.subs(varmap)
+        self.scalar.subs(varmap)
+    
+    @property
+    def free_symbols(self):
+        return self.tup.free_symbols | self.scalar.free_symbols
+    
+    def __eq__(self, other):
+        if not isinstance(self, type(other)):
+            return NotImplemented
+        return (type(self) is type(other) and 
+                self.scalar == other.scalar and 
+                self.tup == other.tup)
+    
+    def __hash__(self):
+        return hash((type(self), self.scalar, self.tup))
+    
+
+class ScalarMultiply(ScalarTupleOp):
+    pass
+
+class TupleVariable(TupleExpression, Variable):
+    def __init__(self, name, dim):
+        TupleExpression.__init__(self, dim)
+        Variable.__init__(self, name)
+
+class TupleToTupleFunction(TupleExpression, UnaryFunction, FunctionOfTuples):
+    def __init__(self, arg):
+        TupleExpression.__init__(self, arg.dim)
+        UnaryFunction.__init__(self, arg)
+
+class Ordered(TupleToTupleFunction):
+    pass
+
+class NormalizeBase(TupleToTupleFunction):
+    pass
+
+class NormalizeL1(NormalizeBase):
+    pass
+
+class NormalizeL2(NormalizeBase):
+    pass
+
+class NormalizeLInf(NormalizeBase):
+    pass
+
+class TuplePiecewise(TupleExpression, PiecewiseBase):
+    outtype = TupleExpression
+
+# class TupleVariable(TupleBase):
+#     pass
+# 
+# class Tuple(TupleBase):
+#     def __iter__(self):
 
 
 

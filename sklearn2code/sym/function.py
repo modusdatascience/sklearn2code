@@ -39,10 +39,18 @@ class VariableFactory(object):
         result += 1
         return result
     
-    def __call__(self, variable_type=RealVariable):
+    def __call__(self, *args, **kwargs):
+        if 'variable_type' in kwargs:
+            variable_type = kwargs['variable_type']
+            del kwargs['variable_type']
+        elif args:
+            variable_type = args[0]
+            args = args[1:]
+        else:
+            variable_type = RealVariable
         result = self.base + str(self.current_n)
         self.current_n += 1
-        return variable_type(result)
+        return variable_type(result, *args, **kwargs)
 
 class VariableNameFactory(VariableFactory):
     def __call__(self):
@@ -272,9 +280,8 @@ class Function(object):
                 unpackable = False
                 if len(function.outputs) == 1:
                     output = function.outputs[0]
-                    if isinstance(output.dim, Integer):
-                        if output.dim.value == len(syms):
-                            unpackable = True
+                    if output.dim == len(syms):
+                        unpackable = True
                 if not unpackable:
                     raise ValueError('Output size of function does not match number of assigned variables: %d != %d' 
                                      % (len(syms), len(function.outputs)))

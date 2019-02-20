@@ -18,6 +18,10 @@ def ordered(*data):
         arr[i,:] = np_sort(arr[i,:])
     return tuple(arr[:, i] for i in range(arr.shape[1]))
 
+def normalize_l1(data):
+    norm = sum(np.abs(x) for x in data)
+    return tuple(np.where(norm != 0, x / norm, x) for x in data)
+
 %for function in functions:
 def ${namer(function)}(${', '.join(map(str, function.inputs)) + ', ' if function.inputs else ''}**kwargs):
 %for assignments, (called_function, arguments) in function.calls:

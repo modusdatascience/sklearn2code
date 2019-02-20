@@ -3,13 +3,12 @@ from .expression import RealNumber, Log,\
     MinBase, GreaterBase, GreaterEqualBase, LessEqualBase, LessBase, Nan, IsNan,\
     ProductBase, SumBase, QuotientBase, DifferenceBase, Value, Expit, And, Or,\
     Variable, BoolToReal, Not, FiniteMap, WeightedMode, RealPiecewise,\
-    IntegerPiecewise, BoolPiecewise, WeightedMedian, EqualsBase, Boolean,\
-    OrderedBase
+    IntegerPiecewise, BoolPiecewise, WeightedMedian, EqualsBase, Boolean
 from six import with_metaclass
 from toolz.functoolz import curry
 from ..utility import HeritableDispatcherMeta, HeritableDispatcher
-from sklearn2code.sym.expression import VectorBase, ScalarVariable,\
-    VectorVariable
+from sklearn2code.sym.expression import Variable, Tuple, Ordered, NormalizeL1,\
+    ScalarMultiply, TupleSum
 
 class ExpressionTypeNotSupportedError(Exception):
     pass
@@ -66,10 +65,10 @@ class BasicOperatorPrinter(ExpressionPrinter):
     def basic_print_less_equal(self, expr):
         return '(%s <= %s)' % (self(expr.lhs), self(expr.rhs))
     
-    @ExpressionPrinter.__call__.register(VectorBase)
+    @ExpressionPrinter.__call__.register(Tuple)
     def basic_print_vector(self, expr):
-        if len(expr.args) > 0:
-            return '(%s)' % (', '.join(map(self, expr.args)))
+        if expr.dim > 0:
+            return '(%s)' % (', '.join(map(self, expr.args)) + ',')
         else:
             return 'tuple()'
     
@@ -77,10 +76,21 @@ class NumpyPrinter(BasicOperatorPrinter):
 #     @ExpressionPrinter.__call__.register(VectorBase)
 #     def numpy_print_vector(self, expr):
 #         return 'array([%s]).T' % (', '.join(map(self, expr.args)))
+    @ExpressionPrinter.__call__.register(TupleSum)
+    def numpy_print_tuple_sum(self, expr):
+        return 'tuple(map(sum, zip(%s)))' % (', '.join(map(self, expr.args)))
     
-    @ExpressionPrinter.__call__.register(OrderedBase)
+    @ExpressionPrinter.__call__.register(ScalarMultiply)
+    def numpy_print_scalar_multiply(self, expr):
+        return 'scalar_multiply(%s, %s)' % (self(expr.tup), self(expr.scalar))
+    
+    @ExpressionPrinter.__call__.register(NormalizeL1)
+    def numpy_print_normalize_l1(self, expr):
+        return 'normalize_l1(%s)' % self(expr.arg)
+    
+    @ExpressionPrinter.__call__.register(Ordered)
     def numpy_print_ordered(self, expr):
-        return 'ordered(%s)' % (', '.join(map(self, expr.args)))
+        return 'ordered(%s)' % (self(expr.arg))
     
     @ExpressionPrinter.__call__.register(RealNumber)
     def numpy_print_real_number(self, expr):
@@ -98,7 +108,7 @@ class NumpyPrinter(BasicOperatorPrinter):
     def numpy_print_not(self, expr):
         return 'logical_not(%s)' % self(expr.arg)
     
-    @ExpressionPrinter.__call__.register(ScalarVariable)
+    @ExpressionPrinter.__call__.register(Variable)
     def numpy_print_scalar_variable(self, expr):
         return expr.name
     
@@ -196,23 +206,24 @@ class NumpyPrinter(BasicOperatorPrinter):
         return '%s' % self(expr.arg)
 
 class PandasPrinter(NumpyPrinter):
-    @ExpressionPrinter.__call__.register(VectorBase)
+    @ExpressionPrinter.__call__.register(Tuple)
     def pandas_print_vector(self, expr):
-        raise ExpressionTypeNotSupportedError('Because pandas is a flat data format, it\'s not possible to render vector expressions.')
+        raise ExpressionTypeNotSupportedError('Because pandas is a flat data format, it\'s not possible to render Tuple expressions.')
     
-    @ExpressionPrinter.__call__.register(ScalarVariable)
+    @ExpressionPrinter.__call__.register(Variable)
     def pandas_print_scalar_variable(self, expr):
         return 'asarray(dataframe[\'' + expr.name + '\'])'
-
+    
+    
 class JavascriptPrinter(BasicOperatorPrinter):
-    @ExpressionPrinter.__call__.register(VectorBase)
+    @ExpressionPrinter.__call__.register(Tuple)
     def js_print_vector(self, expr):
         if len(expr.args) > 1:
             return '[%s]' % (', '.join(map(self, expr.args)))
         elif len(expr.args) == 1:
             # Special case for vector of length 1: treat as scalar.
-            # An unfortunate compromise for compatibility with various 
-            # languages' multiple assignment syntax.  
+            # An unfortunate compromise for compatibility with 
+            # multiple assignment syntax.
             return self(expr.args[0])
         else:
             return '[]'

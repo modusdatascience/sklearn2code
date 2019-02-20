@@ -12,6 +12,10 @@ def weighted_median(data, weights):
     medians = sorted_idx[arange(data.shape[0]), median_idx]
     return data[arange(data.shape[0]), medians]
 
+def normalize_l1(data):
+    norm = sum(np.abs(x) for x in data)
+    return tuple(np.where(norm != 0, x / norm, x) for x in data)
+
 %for function in functions:
 def ${namer(function)}(kwargs):
 %for input in function.inputs:

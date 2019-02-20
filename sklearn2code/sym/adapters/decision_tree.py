@@ -8,8 +8,7 @@ from ..expression import RealNumber, Piecewise
 from sklearn2code.sym.base import sym_predict_proba
 from sklearn2code.sym.function import VariableFactory
 from itertools import starmap
-from sklearn2code.sym.expression import true, Sum, Vector, RealVectorVariable,\
-    VectorSum
+from sklearn2code.sym.expression import true, TupleVariable, Tuple, NormalizeL1
 
 def _inner_sym_predict_decision_tree_regressor(model, symbols, current_node=0, output_idx=0, class_idx=0):
     left = model.tree_.children_left[current_node]
@@ -48,16 +47,17 @@ def sym_predict_proba_decision_tree_classifier(estimator):
         for class_idx in range(n_classes):
             inner.append(_inner_sym_predict_decision_tree_regressor(estimator, symbols, output_idx=output_idx, class_idx=class_idx))
         inner_result.append(inner)
-    inner_result_fun = Function(symbols, tuple(), tuple(starmap(Vector, inner_result)))
+    inner_result_fun = Function(symbols, tuple(), tuple(starmap(Tuple, inner_result)))
     Var = VariableFactory(existing=inputs)
-    vars_ = tuple(Var(RealVectorVariable) for _ in inner_result)
-    summation = Function(vars_, tuple(), tuple(map(VectorSum, vars_)))
-    sums = tuple(Var() for _ in inner_result)
+    vars_ = tuple(Var(TupleVariable, len(inner)) for inner in inner_result)
+#     summation = Function(vars_, tuple(), tuple(map(VectorSum, vars_)))
+#     sums = tuple(Var() for _ in inner_result)
     calls = (
              (vars_, (inner_result_fun, inputs)),
-             (sums, (summation, vars_)),
+#              (sums, (summation, vars_)),
              )
-    outputs = tuple(Piecewise((v / s, s > RealNumber(0)), (v, true)) for v, s in zip(vars_, sums))
+    outputs = tuple(map(NormalizeL1, vars_))
+#     tuple(Piecewise((v / s, s > RealNumber(0)), (v, true)) for v, s in zip(vars_, sums))
     return Function(inputs, calls, outputs)
     
 #     return Function(symbols, tuple(), tuple(starmap(VectorExpression, result)))
