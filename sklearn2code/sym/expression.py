@@ -989,7 +989,8 @@ class FiniteMap(UnaryFunction):
         self.outtype = get_common_type(map(type, self.mapping.values()))
     
     def varfactory(self):
-        return self.outtype.varfactory()
+        # TODO: What if they're different types?
+        return self.mapping.values()[0].varfactory()
     
     @property
     def free_symbols(self):
@@ -1013,8 +1014,8 @@ class Statistic(Expression):
         self.data = tuple(data)
         self.outtype = get_common_type(map(type, data))
     
-    def varfactory(self):
-        return self.outtype.varfactory()
+#     def varfactory(self):
+#         return self.outtype.varfactory()
     
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -1071,10 +1072,12 @@ class WeightedStatistic(Statistic):
                                                   ', '.join(map(str, self.weights)))
         
 class WeightedMode(WeightedStatistic):
-    pass
+    def varfactory(self):
+        return self.data[0].varfactory()
 
 class WeightedMedian(WeightedStatistic):
-    pass
+    def varfactory(self):
+        return self.data[0].varfactory()
 
 class TupleExpression(Expression):
     '''
