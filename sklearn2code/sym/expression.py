@@ -26,7 +26,7 @@ def get_common_type(types):
         while not issubclass(t, common_type):
             common_type = common_type.__mro__[1]
     return common_type
-       
+
 class Equaler(object):
     def __init__(self, x):
         self.x = x
@@ -987,6 +987,9 @@ class FiniteMap(UnaryFunction):
             raise TypeError('Keys and values of FiniteMap must be Constants. Got %s.' % str(tuple(map(type, chain(mapping.keys(), mapping.values())))))
         self.arg = arg
         self.outtype = get_common_type(map(type, self.mapping.values()))
+    
+    def varfactory(self):
+        return self.outtype.varfactory()
     
     @property
     def free_symbols(self):
