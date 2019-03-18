@@ -156,6 +156,10 @@ class NumpyPrinter(BasicOperatorPrinter):
     def numpy_print_min(self, expr):
         return 'minimum(%s)' % ', '.join(map(self, expr.args))
     
+    @ExpressionPrinter.__call__.register(EqualsBase)
+    def numpy_print_equals(self, expr):
+        return 'equal(%s, %s)' % (self(expr.lhs), self(expr.rhs))
+    
     @ExpressionPrinter.__call__.register(GreaterBase)
     def numpy_print_greater(self, expr):
         return 'greater(%s, %s)' % (self(expr.lhs), self(expr.rhs))

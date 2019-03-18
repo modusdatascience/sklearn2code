@@ -893,13 +893,13 @@ class EqualsBase(BooleanExpression, BinaryFunction):
     def __str__(self):
         return '(%s == %s)' % (str(self.lhs), str(self.rhs))
 
-class EqualsReal(FunctionOfReals):
+class EqualsReal(EqualsBase, FunctionOfReals):
     pass
 
-class EqualsInt(FunctionOfInts):
+class EqualsInt(EqualsBase, FunctionOfInts):
     pass
 
-class EqualsBool(FunctionOfBools):
+class EqualsBool(EqualsBase, FunctionOfBools):
     pass
 
 Equals = dispatch('Equals')
