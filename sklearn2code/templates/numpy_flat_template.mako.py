@@ -1,4 +1,4 @@
-from numpy import arange, newaxis, cumsum, vectorize, array, bincount, argmax, apply_along_axis, asarray, array, argmax, argsort, transpose, bincount, equal, where, isnan, maximum, minimum, exp, logical_not, logical_and, logical_or, select, less_equal, greater_equal, less, greater, nan, inf, log
+from numpy import power, arange, newaxis, cumsum, vectorize, array, bincount, argmax, apply_along_axis, asarray, array, argmax, argsort, transpose, bincount, equal, where, isnan, maximum, minimum, exp, logical_not, logical_and, logical_or, select, less_equal, greater_equal, less, greater, nan, inf, log
 from scipy.special import expit
 from toolz import compose
 from functools import partial
