@@ -1,4 +1,4 @@
-from sklearn2code.sym.expression import RealNumber, Log,\
+from sklearn2code.sym.expression import PowerBase, RealNumber, Log,\
     PiecewiseBase, NegateBase, MaxBase,\
     MinBase, GreaterBase, GreaterEqualBase, LessEqualBase, LessBase, Nan, IsNan,\
     ProductBase, SumBase, QuotientBase, DifferenceBase, Value, Expit, And, Or,\
@@ -173,6 +173,10 @@ class NumpyPrinter(BasicOperatorPrinter):
     def numpy_print_min(self, expr):
         return 'minimum(%s)' % ', '.join(map(self, expr.args))
     
+    @ExpressionPrinter.__call__.register(PowerBase)
+    def numpy_print_power(self, expr):
+        return 'power(%s, %s)' % (self(expr.lhs), self(expr.rhs))
+
     @ExpressionPrinter.__call__.register(GreaterBase)
     def numpy_print_greater(self, expr):
         return 'greater(%s, %s)' % (self(expr.lhs), self(expr.rhs))

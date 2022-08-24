@@ -5,7 +5,7 @@ dependencies:
     - numpy=1.13.1
     - mako
     - sympy
-    - scikit-learn
+    - scikit-learn=0.19.2
     - six
     - networkx
     - multipledispatch

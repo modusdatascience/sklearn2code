@@ -435,6 +435,34 @@ class FunctionOfReals(FunctionOfType):
     
 class FunctionOfInts(FunctionOfType):
     argtype = IntegerExpression
+
+
+class FunctionOfTypes(Expression):
+    def __init__(self, *args):
+        expected_arity = len(self.argtypes)
+        arg_count = len(args)
+        if expected_arity !=  arg_count:
+            raise TypeError(
+                'Attempt to create %s with incorrect number of arguments.'
+                ' Expected %d but got %d' % (
+                    self.__class__.__name__,
+                    expected_arity,
+                    arg_count
+                )
+            )
+        
+        for i, (arg, argtype) in enumerate(zip(args, self.argtypes)):
+            if not isinstance(arg, argtype):
+                raise TypeError(
+                    'Attempt to create %s with incorrect type for argument %d: '
+                    'expected %s but got %s.' % 
+                    (
+                        self.__class__.__name__, 
+                        argtype.__name__,
+                        arg.__class__.__name__
+                    )
+                )
+
     
 class FunctionOfNumber(FunctionOfType):
     argtype = NumberExpression
@@ -603,15 +631,15 @@ class PowerBase(NumberExpression, BinaryFunction):
 class IntPowerInt(IntegerExpression, PowerBase, FunctionOfInts):
     pass
 
-class RealPowerInt(RealNumberExpression, PowerBase, FunctionOfInts):
-    pass
+class RealPowerInt(RealNumberExpression, PowerBase, FunctionOfTypes):
+    argtypes = [RealNumberExpression, IntegerExpression]
 
 class RealPowerReal(RealNumberExpression, PowerBase, FunctionOfReals):
     pass
 
 Power = Dispatcher('Power')
-Power.register(IntegerExpression, IntegerExpression)(IntPowerInt)
 Power.register(RealNumberExpression, IntegerExpression)(RealPowerInt)
+Power.register(IntegerExpression, IntegerExpression)(IntPowerInt)
 Power.register(RealNumberExpression, RealNumberExpression)(RealPowerReal)
 
 class QuotientBase(NumberExpression, BinaryFunction):
